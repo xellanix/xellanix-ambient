@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+	--color-xellanix-50: #f1f7fe;
+	--color-xellanix-100: #e2effc;
+	--color-xellanix-200: #bfdef8;
+	--color-xellanix-300: #86c3f3;
+	--color-xellanix-400: #46a4ea;
+	--color-xellanix-500: #1d88da;
+	--color-xellanix-600: #0f65af;
+	--color-xellanix-700: #0e5596;
+	--color-xellanix-800: #10497c;
+	--color-xellanix-900: #133e67;
+	--color-xellanix-950: #0d2744;
+
+  --spacing-8xl: 90rem;
+  --spacing-8xl/2: max(calc((100dvw - 90rem) / 2), 0px);
+
+  --font-sans: "Figtree", sans-serif;
+}
+
+@layer utilities {
+	.dark [data-mode="dark"] {
+		/* Dark mode custom styles */
+	}
+}
+
+:root {
+	font-family: Figtree, sans-serif;
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}

@@ -80,6 +80,8 @@ const App: React.FC = () => {
                     lyrics={lyrics}
                     currentLyricIndex={currentLyricIndex}
                     lyricsRef={lyricsRef}
+                    audioRef={audioRef}
+                    setCurrentTime={setCurrentTime}
                 />
             )}
             <Playlist

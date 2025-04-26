@@ -34,9 +34,6 @@
 	-moz-osx-font-smoothing: grayscale;
 }
 
-.lyric-active {
-	@apply text-blue-500 font-bold;
-}
 .scroll-container {
 	@apply scroll-smooth;
 }

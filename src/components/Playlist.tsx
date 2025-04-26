@@ -205,7 +205,7 @@ const Playlist: React.FC<PlaylistProps> = ({
             <h2 className="text-lg font-semibold mb-2">Playlist</h2>
             {error && <p className="text-red-500 mb-2">{error}</p>}
             <label className="block mb-4">
-                <span className="inline-block px-4 py-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600">
+                <span className="inline-block px-4 py-2 bg-xellanix-600 dark:bg-xellanix-300 text-white rounded-lg cursor-pointer hover:bg-xellanix-600 ">
                     Add Files
                 </span>
                 <input

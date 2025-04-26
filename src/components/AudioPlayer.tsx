@@ -82,7 +82,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
             <div className="flex items-center mb-4">
                 <button
                     onClick={togglePlay}
-                    className="p-2 bg-blue-500 text-white rounded-full mr-2 disabled:opacity-50"
+                    className="p-2 bg-xellanix-600 dark:bg-xellanix-300 text-white rounded-full mr-2 disabled:opacity-50"
                     disabled={!isTrackSelected}>
                     {isPlaying ? "⏸" : "▶️"}
                 </button>

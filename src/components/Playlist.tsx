@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import { Track, LyricLine } from "../types";
 
 interface PlaylistProps {
@@ -15,37 +15,6 @@ interface PlaylistProps {
     setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
 }
 
-const parseLrc = (lrcContent: string): LyricLine[] => {
-    const lines = lrcContent.split("\n");
-    const lyrics: LyricLine[] = [];
-    const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
-
-    for (const line of lines) {
-        const match = line.match(timeRegex);
-        if (match) {
-            const minutes = parseInt(match[1]);
-            const seconds = parseInt(match[2]);
-            const milliseconds = parseInt(match[3].padEnd(3, "0"));
-            const time = minutes * 60 + seconds + milliseconds / 1000;
-            const text = match[4].trim();
-            if (text) lyrics.push({ time, text });
-        }
-    }
-    return lyrics;
-};
-
-const detectCodec = (file: File): string => {
-    const type = file.type;
-    const name = file.name.toLowerCase();
-    if (type.includes("mpeg") || name.endsWith(".mp3")) return "MP3";
-    if (type.includes("wav") || name.endsWith(".wav")) return "WAV";
-    if (type.includes("aac") || name.endsWith(".aac")) return "AAC";
-    if (type.includes("flac") || name.endsWith(".flac")) return "FLAC";
-    if (type.includes("x-m4a") || name.endsWith(".m4a")) return "ALAC";
-    if (name.endsWith(".eac3")) return "EAC3";
-    return "Unknown";
-};
-
 const Playlist: React.FC<PlaylistProps> = ({
     playlist,
     setPlaylist,
@@ -59,199 +28,178 @@ const Playlist: React.FC<PlaylistProps> = ({
     setDuration,
     setQueue,
 }) => {
-    const [error, setError] = useState<string | null>(null);
+    const audioInputRef = useRef<HTMLInputElement>(null);
+    const lyricInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (files) {
-            const lrcFiles = Array.from(files).filter((f) => f.name.endsWith(".lrc"));
-            const audioFiles = Array.from(files).filter((f) => f.type.startsWith("audio/"));
-
-            const newTracks = audioFiles.map((file) => {
-                const baseName = file.name.replace(/\.[^/.]+$/, "");
-                const lrcFile = lrcFiles.find((lrc) => lrc.name.replace(".lrc", "") === baseName);
-                return {
-                    file,
-                    url: URL.createObjectURL(file),
-                    name: file.name,
-                    hasLyrics: !!lrcFile,
-                    lyricsUrl: lrcFile ? URL.createObjectURL(lrcFile) : undefined,
-                    codec: detectCodec(file),
-                };
-            });
-
-            setPlaylist((prev) => [...prev, ...newTracks]);
-            setQueue((prev) => [...prev, ...newTracks]);
-
-            if (newTracks.length > 0 && newTracks[0].hasLyrics && newTracks[0].lyricsUrl) {
-                fetch(newTracks[0].lyricsUrl)
-                    .then((res) => res.text())
-                    .then((content) => setLyrics(parseLrc(content)));
-            }
-        }
+    const handleAddTrack = () => {
+        audioInputRef.current?.click();
     };
 
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        const files = e.dataTransfer.files;
-        const lrcFiles = Array.from(files).filter((f) => f.name.endsWith(".lrc"));
-        const audioFiles = Array.from(files).filter((f) => f.type.startsWith("audio/"));
+    const handleAudioFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const audioFiles = e.target.files;
+        if (!audioFiles || audioFiles.length === 0) return;
 
-        const newTracks = audioFiles.map((file) => {
-            const baseName = file.name.replace(/\.[^/.]+$/, "");
-            const lrcFile = lrcFiles.find((lrc) => lrc.name.replace(".lrc", "") === baseName);
-            return {
-                file,
+        lyricInputRef.current?.click();
+        const lyricFiles = lyricInputRef.current?.files;
+
+        const newTracks: Track[] = [];
+        for (let i = 0; i < audioFiles.length; i++) {
+            const file = audioFiles[i];
+            const lyricFile =
+                lyricFiles && lyricFiles[i] && lyricFiles[i].name.includes(".lrc")
+                    ? lyricFiles[i]
+                    : null;
+
+            const newTrack: Track = {
+                name: file.name.replace(/\.[^/.]+$/, ""),
+                artist: "Unknown Artist",
                 url: URL.createObjectURL(file),
-                name: file.name,
-                hasLyrics: !!lrcFile,
-                lyricsUrl: lrcFile ? URL.createObjectURL(lrcFile) : undefined,
-                codec: detectCodec(file),
+                hasLyrics: lyricFile !== null,
+                lyricsUrl: lyricFile ? URL.createObjectURL(lyricFile) : undefined,
+                album: "Unknown Album",
+                file,
+                codec: file.type,
             };
-        });
+            newTracks.push(newTrack);
+        }
 
         setPlaylist((prev) => [...prev, ...newTracks]);
         setQueue((prev) => [...prev, ...newTracks]);
 
-        if (newTracks.length > 0 && newTracks[0].hasLyrics && newTracks[0].lyricsUrl) {
-            fetch(newTracks[0].lyricsUrl)
-                .then((res) => res.text())
-                .then((content) => setLyrics(parseLrc(content)));
-        }
+        if (audioInputRef.current) audioInputRef.current.value = "";
+        if (lyricInputRef.current) lyricInputRef.current.value = "";
     };
 
-    const changeTrack = async (index: number) => {
-        setCurrentTrackIndex(index);
-        setCurrentLyricIndex(-1);
-        setError(null);
+    const handleLyricFileChange = () => {
+        // Triggered to allow lyric file selection
+    };
 
-        const track = playlist[index];
-
-        // Load lyrics if available
-        if (track.hasLyrics && track.lyricsUrl) {
-            try {
-                const response = await fetch(track.lyricsUrl);
-                const content = await response.text();
-                setLyrics(parseLrc(content));
-            } catch (err) {
-                console.error("Failed to load lyrics:", err);
-                setLyrics([]);
-            }
-        } else {
-            setLyrics([]);
-        }
-
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.src = track.url;
-            try {
-                await audioRef.current.load();
-                await audioRef.current.play();
-                setIsPlaying(true);
-            } catch (err) {
-                console.error("Playback error:", err);
-                setError(`Failed to play ${track.name}. Ensure the format is supported.`);
+    const handleRemoveTrack = (index: number) => {
+        setPlaylist((prev) => {
+            const newPlaylist = prev.filter((_, i) => i !== index);
+            if (index === currentTrackIndex) {
+                setCurrentTrackIndex(-1);
                 setIsPlaying(false);
-
-                // Fallback for ALAC/EAC3
-                if (track.name.endsWith(".m4a") || track.name.endsWith(".eac3")) {
-                    try {
-                        const arrayBuffer = await track.file.arrayBuffer();
-                        const audioContext = new (window.AudioContext ||
-                            (window as any).webkitAudioContext)();
-                        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                        const source = audioContext.createBufferSource();
-                        source.buffer = audioBuffer;
-                        source.connect(audioContext.destination);
-                        source.start();
-                        setIsPlaying(true);
-                    } catch (fallbackErr) {
-                        console.error("Fallback error:", fallbackErr);
-                        setError(
-                            `Failed to play ${track.name}. Codec may be unsupported (ALAC/EAC3).`
-                        );
-                        setIsPlaying(false);
-                    }
+                setCurrentTime(0);
+                setDuration(0);
+                setLyrics([]);
+                setCurrentLyricIndex(-1);
+                if (audioRef.current) {
+                    audioRef.current.src = "";
                 }
+            } else if (index < currentTrackIndex) {
+                setCurrentTrackIndex((prevIndex) => prevIndex - 1);
             }
-        }
+            return newPlaylist;
+        });
+        setQueue((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const removeTrack = (index: number) => {
-        const track = playlist[index];
-        URL.revokeObjectURL(track.url);
-        if (track.lyricsUrl) {
-            URL.revokeObjectURL(track.lyricsUrl);
-        }
-        setPlaylist((prev) => prev.filter((_, i) => i !== index));
-        setQueue((prev) => prev.filter((t) => t.url !== track.url));
+    const handlePlayTrack = (index: number) => {
+        setCurrentTrackIndex(index);
+        setCurrentTime(0);
+        setLyrics([]);
+        setCurrentLyricIndex(-1);
 
-        if (index === currentTrackIndex) {
-            setCurrentTrackIndex(-1);
-            setLyrics([]);
-            setCurrentLyricIndex(-1);
-            setIsPlaying(false);
-            setCurrentTime(0);
-            setDuration(0);
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current.src = "";
-            }
-        } else if (index < currentTrackIndex) {
-            setCurrentTrackIndex((prev) => prev - 1);
+        const track = playlist[index];
+        if (audioRef.current) {
+            audioRef.current.src = track.url;
+            audioRef.current
+                .play()
+                .then(() => {
+                    setIsPlaying(true);
+                    setDuration(audioRef.current?.duration || 0);
+                })
+                .catch((err) => {
+                    console.error("Playback error:", err);
+                    setIsPlaying(false);
+                });
+        }
+
+        if (track.hasLyrics && track.lyricsUrl) {
+            fetch(track.lyricsUrl)
+                .then((response) => response.text())
+                .then((content) => {
+                    const parsedLyrics: LyricLine[] = content
+                        .split("\n")
+                        .map((line) => {
+                            const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/);
+                            if (match) {
+                                const minutes = parseInt(match[1]);
+                                const seconds = parseInt(match[2]);
+                                const milliseconds = parseInt(match[3].padEnd(3, "0"));
+                                const time = minutes * 60 + seconds + milliseconds / 1000;
+                                const text = match[4].trim();
+                                return text ? { time, text } : null;
+                            }
+                            return null;
+                        })
+                        .filter((line): line is LyricLine => line !== null);
+                    setLyrics(parsedLyrics);
+                })
+                .catch((err) => {
+                    console.error("Failed to load lyrics:", err);
+                    setLyrics([]);
+                });
         }
     };
 
     return (
-        <div
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}>
-            <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Playlist</h2>
-            {error && <p className="text-red-500 dark:text-red-400 mb-3">{error}</p>}
-            <label className="block mb-4">
-                <span className="inline-block px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors">
-                    Add Files
-                </span>
-                <input
-                    type="file"
-                    multiple
-                    accept="audio/*,.lrc"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                />
-            </label>
-            <ul>
-                {playlist
-                    .filter((track) => !track.name.endsWith(".lrc"))
-                    .map((track, index) => (
-                        <li
-                            key={index}
-                            className={`flex items-center justify-between p-2 cursor-pointer rounded-md transition-colors ${
-                                index === currentTrackIndex
-                                    ? "bg-gray-200 dark:bg-gray-600"
-                                    : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                            }`}
-                            onClick={() => changeTrack(index)}>
-                            <div className="flex items-center text-gray-900 dark:text-gray-200">
-                                {track.hasLyrics && <span className="mr-2">🎵</span>}
-                                <span>{track.name}</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">
-                                    {track.codec}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Playlist</h2>
+            <button
+                onClick={handleAddTrack}
+                className="mb-4 px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors">
+                Add Track
+            </button>
+            <input
+                type="file"
+                accept="audio/*"
+                multiple
+                ref={audioInputRef}
+                onChange={handleAudioFileChange}
+                className="hidden"
+            />
+            <input
+                type="file"
+                accept=".lrc"
+                multiple
+                ref={lyricInputRef}
+                onChange={handleLyricFileChange}
+                className="hidden"
+            />
+            <ul className="space-y-2">
+                {playlist.map((track, index) => (
+                    <li
+                        key={index}
+                        className={`flex justify-between items-center p-2 rounded-lg ${
+                            index === currentTrackIndex
+                                ? "bg-blue-100 dark:bg-blue-900"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}>
+                        <div
+                            className="flex-1 cursor-pointer truncate"
+                            onClick={() => handlePlayTrack(index)}>
+                            <span className="text-gray-900 dark:text-white">{track.name}</span>
+                            {track.artist && (
+                                <span className="text-sm text-gray-600 dark:text-gray-300 ml-2">
+                                    - {track.artist}
                                 </span>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        removeTrack(index);
-                                    }}
-                                    className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">
-                                    ✕
-                                </button>
-                            </div>
-                        </li>
-                    ))}
+                            )}
+                            {track.codec && (
+                                <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                                    ({track.codec})
+                                </span>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => handleRemoveTrack(index)}
+                            className="p-2 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500 transition-colors"
+                            title="Remove Track">
+                            🗑️
+                        </button>
+                    </li>
+                ))}
             </ul>
         </div>
     );

@@ -19,6 +19,7 @@ const App: React.FC = () => {
     const [viewMode, setViewMode] = useState<"playlist" | "queue">("playlist");
     const [shuffle, setShuffle] = useState<boolean>(false);
     const [loop, setLoop] = useState<"none" | "track" | "playlist">("none");
+    const [isIslandExpanded, setIsIslandExpanded] = useState<boolean>(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const lyricsRef = useRef<HTMLDivElement | null>(null);
 
@@ -32,21 +33,18 @@ const App: React.FC = () => {
         const panelHeight = panelRect.height;
         const elementHeight = elementRect.height;
 
-        // Calculate desired scroll position to center the element
         let scrollTop = element.offsetTop - panel.offsetTop - (panelHeight - elementHeight) / 2;
 
-        // Adjust for start and end of lyrics
         if (index === 0) {
-            scrollTop = 0; // Scroll to top for first lyric
+            scrollTop = 0;
         } else if (index === totalLyrics - 1) {
-            scrollTop = panel.scrollHeight - panelHeight; // Scroll to bottom for last lyric
+            scrollTop = panel.scrollHeight - panelHeight;
         }
 
-        // Apply smooth scrolling
         panel.scrollTo({ top: scrollTop, behavior: "smooth" });
     };
 
-    // Sync lyrics with current time and handle scroll
+    // Sync lyrics with current time
     useEffect(() => {
         if (lyrics.length && currentTime) {
             const index = lyrics.findIndex((lyric, i) => {
@@ -97,7 +95,7 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto p-4 max-w-4xl bg-gray-100 dark:bg-gray-900 min-h-screen">
+        <div className="container mx-auto p-4 max-w-4xl bg-gray-100 dark:bg-gray-900 min-h-screen relative">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Music Player</h1>
                 <div className="flex space-x-3">
@@ -115,25 +113,6 @@ const App: React.FC = () => {
                     </button>
                 </div>
             </div>
-            <AudioPlayer
-                audioRef={audioRef}
-                playlist={playlist}
-                queue={queue}
-                currentTrackIndex={currentTrackIndex}
-                isPlaying={isPlaying}
-                setIsPlaying={setIsPlaying}
-                currentTime={currentTime}
-                setCurrentTime={setCurrentTime}
-                duration={duration}
-                setDuration={setDuration}
-                setCurrentTrackIndex={setCurrentTrackIndex}
-                setLyrics={setLyrics}
-                setCurrentLyricIndex={setCurrentLyricIndex}
-                shuffle={shuffle}
-                loop={loop}
-                toggleShuffle={toggleShuffle}
-                toggleLoop={toggleLoop}
-            />
             {showLyrics && (
                 <LyricsDisplay
                     lyrics={lyrics}
@@ -190,6 +169,31 @@ const App: React.FC = () => {
                     setDuration={setDuration}
                 />
             )}
+            <div
+                className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-40"
+                onMouseEnter={() => setIsIslandExpanded(true)}
+                onMouseLeave={() => setIsIslandExpanded(false)}>
+                <AudioPlayer
+                    audioRef={audioRef}
+                    playlist={playlist}
+                    queue={queue}
+                    currentTrackIndex={currentTrackIndex}
+                    isPlaying={isPlaying}
+                    setIsPlaying={setIsPlaying}
+                    currentTime={currentTime}
+                    setCurrentTime={setCurrentTime}
+                    duration={duration}
+                    setDuration={setDuration}
+                    setCurrentTrackIndex={setCurrentTrackIndex}
+                    setLyrics={setLyrics}
+                    setCurrentLyricIndex={setCurrentLyricIndex}
+                    shuffle={shuffle}
+                    loop={loop}
+                    toggleShuffle={toggleShuffle}
+                    toggleLoop={toggleLoop}
+                    isIslandExpanded={isIslandExpanded}
+                />
+            </div>
         </div>
     );
 };

@@ -10,8 +10,8 @@ An simple music player with focus on lyrics display.
 - [x] (04/26/2025 - v0.3.0) Add light/dark mode
 - [ ] Show track cover
 - [x] (04/26/2025 - v0.2.0) Animate lyrics scroll
-- [ ] Add shuffle and loop control
-- [ ] Add volume control
+- [x] (04/26/2025 - v0.4.0) Add shuffle and loop control
+- [x] (04/26/2025 - v0.4.0) Add volume control
 - [ ] Add PWA support
 - [ ] Improve other UI/UX*
 

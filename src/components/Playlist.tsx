@@ -12,6 +12,7 @@ interface PlaylistProps {
     setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
     setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
     setDuration: React.Dispatch<React.SetStateAction<number>>;
+    setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
 }
 
 const parseLrc = (lrcContent: string): LyricLine[] => {
@@ -56,6 +57,7 @@ const Playlist: React.FC<PlaylistProps> = ({
     setIsPlaying,
     setCurrentTime,
     setDuration,
+    setQueue,
 }) => {
     const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +81,7 @@ const Playlist: React.FC<PlaylistProps> = ({
             });
 
             setPlaylist((prev) => [...prev, ...newTracks]);
+            setQueue((prev) => [...prev, ...newTracks]);
 
             if (newTracks.length > 0 && newTracks[0].hasLyrics && newTracks[0].lyricsUrl) {
                 fetch(newTracks[0].lyricsUrl)
@@ -108,6 +111,7 @@ const Playlist: React.FC<PlaylistProps> = ({
         });
 
         setPlaylist((prev) => [...prev, ...newTracks]);
+        setQueue((prev) => [...prev, ...newTracks]);
 
         if (newTracks.length > 0 && newTracks[0].hasLyrics && newTracks[0].lyricsUrl) {
             fetch(newTracks[0].lyricsUrl)
@@ -180,6 +184,7 @@ const Playlist: React.FC<PlaylistProps> = ({
             URL.revokeObjectURL(track.lyricsUrl);
         }
         setPlaylist((prev) => prev.filter((_, i) => i !== index));
+        setQueue((prev) => prev.filter((t) => t.url !== track.url));
 
         if (index === currentTrackIndex) {
             setCurrentTrackIndex(-1);

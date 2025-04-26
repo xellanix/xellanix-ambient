@@ -13,10 +13,10 @@
 	--color-xellanix-900: #133e67;
 	--color-xellanix-950: #0d2744;
 
-  --spacing-8xl: 90rem;
-  --spacing-8xl/2: max(calc((100dvw - 90rem) / 2), 0px);
+	--spacing-8xl: 90rem;
+	--spacing-8xl/2: max(calc((100dvw - 90rem) / 2), 0px);
 
-  --font-sans: "Figtree", sans-serif;
+	--font-sans: "Figtree", sans-serif;
 }
 
 @layer utilities {
@@ -32,4 +32,18 @@
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+}
+
+.lyric-active {
+	@apply text-blue-500 font-bold;
+}
+.scroll-container {
+	@apply scroll-smooth;
+}
+.progress-bar {
+	@apply bg-gradient-to-r from-blue-500 to-gray-300 dark:to-gray-600;
+	background-size: var(--progress) 100%;
+}
+input[type="file"] {
+	@apply hidden;
 }

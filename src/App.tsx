@@ -1,95 +1,94 @@
-import React, { useState, useEffect, useRef } from "react";
-import MusicPlayer from "./components/MusicPlayer";
-import { addSongToLibrary, getLibrary, Song } from "./lib/library";
-import { WebRTCSync } from "./lib/webrtc";
-
-// Generate or retrieve a persistent deviceId
-const getDeviceId = () => {
-    let storedId = localStorage.getItem("deviceId");
-    if (!storedId) {
-        storedId = "device-" + Math.random().toString(36).substring(2, 9);
-        localStorage.setItem("deviceId", storedId);
-    }
-    return storedId;
-};
-const deviceId = getDeviceId();
+import React, { useState, useRef, useEffect } from "react";
+import AudioPlayer from "./components/AudioPlayer";
+import LyricsDisplay from "./components/LyricsDisplay";
+import Playlist from "./components/Playlist";
+import { Track, LyricLine } from "./types";
 
 const App: React.FC = () => {
-    const [library, setLibrary] = useState<Song[]>([]);
-    const [currentSong, setCurrentSong] = useState<Song | null>(null);
-    const [devices, setDevices] = useState<string[]>([deviceId]);
-    const rtcRef = useRef<WebRTCSync | null>(null);
+    const [playlist, setPlaylist] = useState<Track[]>([]);
+    const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const [currentTime, setCurrentTime] = useState<number>(0);
+    const [duration, setDuration] = useState<number>(0);
+    const [lyrics, setLyrics] = useState<LyricLine[]>([]);
+    const [currentLyricIndex, setCurrentLyricIndex] = useState<number>(-1);
+    const [darkMode, setDarkMode] = useState<boolean>(true);
+    const [showLyrics, setShowLyrics] = useState<boolean>(true);
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const lyricsRef = useRef<HTMLDivElement>(null);
 
+    // Sync lyrics with current time
     useEffect(() => {
-        setLibrary(getLibrary());
+        if (lyrics.length && currentTime) {
+            const index = lyrics.findIndex((lyric, i) => {
+                const nextTime = lyrics[i + 1]?.time || Infinity;
+                return currentTime >= lyric.time && currentTime < nextTime;
+            });
+            if (index !== currentLyricIndex) {
+                setCurrentLyricIndex(index);
+                if (lyricsRef.current && index >= 0) {
+                    const lyricElement = lyricsRef.current.children[index] as HTMLElement;
+                    lyricElement?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }
+        }
+    }, [currentTime, lyrics, currentLyricIndex]);
 
-        const sync = new WebRTCSync(deviceId, (msg) => {
-            if (msg.type === "library") setLibrary(msg.data);
-            if (msg.type === "play") setCurrentSong(msg.data);
-            if (msg.type === "device") setDevices((prev) => [...prev, msg.data]);
-        });
-        rtcRef.current = sync;
-        sync.initiateConnection().then((offer) => console.log("Offer:", offer));
-
-        sync.send({ type: "device", data: deviceId });
-
-        console.log("Current deviceId:", deviceId);
-        console.log("Devices:", devices);
-        console.log("Library:", getLibrary());
-
-        return () => {
-            sync.close();
-        };
-    }, []);
-
-    const handleAddSong = () => {
-        const song: Song = {
-            id: crypto.randomUUID(), // Unique ID for each song
-            title: "Sample Song",
-            file: "/song.flac",
-            lrc: "/song.lrc",
-            ownerDeviceId: deviceId,
-        };
-        addSongToLibrary(song);
-        setLibrary(getLibrary());
-        rtcRef.current?.send({ type: "library", data: getLibrary() });
-        console.log("Added song with ownerDeviceId:", deviceId);
+    const toggleDarkMode = () => {
+        setDarkMode(!darkMode);
+        document.documentElement.classList.toggle("dark");
     };
 
-    const playSong = (song: Song) => {
-        console.log("Attempting to play song:", song);
-        console.log("Devices:", devices);
-        if (devices.includes(song.ownerDeviceId)) {
-            setCurrentSong(song);
-            rtcRef.current?.send({ type: "play", data: song });
-        } else {
-            alert("Song owner device is offline.");
-        }
+    const toggleLyrics = () => {
+        setShowLyrics(!showLyrics);
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
-            <h1 className="text-2xl font-bold mb-4">Music Player</h1>
-            <button
-                onClick={handleAddSong}
-                className="mb-4 px-4 py-2 bg-blue-500 text-white rounded">
-                Add Sample Song
-            </button>
-            <div className="w-full max-w-2xl">
-                {currentSong && <MusicPlayer song={currentSong.file} lrc={currentSong.lrc} />}
-                <h2 className="text-xl font-semibold mt-4">Library</h2>
-                <ul className="space-y-2">
-                    {library.map((song) => (
-                        <li
-                            key={song.id}
-                            onClick={() => playSong(song)}
-                            className="p-2 bg-white rounded shadow cursor-pointer hover:bg-gray-100">
-                            {song.title}{" "}
-                            {devices.includes(song.ownerDeviceId) ? "(Playable)" : "(Offline)"}
-                        </li>
-                    ))}
-                </ul>
+        <div className="container mx-auto p-4 max-w-4xl">
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold">Music Player</h1>
+                <div className="flex space-x-2">
+                    <button
+                        onClick={toggleLyrics}
+                        className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+                        {showLyrics ? "🎵 Hide Lyrics" : "🎵 Show Lyrics"}
+                    </button>
+                    <button
+                        onClick={toggleDarkMode}
+                        className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+                        {darkMode ? "☀️" : "🌙"}
+                    </button>
+                </div>
             </div>
+            <AudioPlayer
+                audioRef={audioRef}
+                playlist={playlist}
+                currentTrackIndex={currentTrackIndex}
+                isPlaying={isPlaying}
+                setIsPlaying={setIsPlaying}
+                currentTime={currentTime}
+                setCurrentTime={setCurrentTime}
+                duration={duration}
+                setDuration={setDuration}
+                setCurrentTrackIndex={setCurrentTrackIndex}
+            />
+            {showLyrics && (
+                <LyricsDisplay
+                    lyrics={lyrics}
+                    currentLyricIndex={currentLyricIndex}
+                    lyricsRef={lyricsRef}
+                />
+            )}
+            <Playlist
+                playlist={playlist}
+                setPlaylist={setPlaylist}
+                currentTrackIndex={currentTrackIndex}
+                setCurrentTrackIndex={setCurrentTrackIndex}
+                setLyrics={setLyrics}
+                setCurrentLyricIndex={setCurrentLyricIndex}
+                audioRef={audioRef}
+                setIsPlaying={setIsPlaying}
+            />
         </div>
     );
 };

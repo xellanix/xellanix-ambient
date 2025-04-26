@@ -7,7 +7,7 @@ An simple music player with focus on lyrics display.
 - [x] (04/26/2025 - v0.1.0) Sync lyrics with current time
 - [x] (04/26/2025 - v0.1.0) Add minimal playlist
 - [x] (04/26/2025 - v0.2.0) Jump to specific lyric by clicking on the lyric line
-- [ ] Add light/dark mode
+- [x] (04/26/2025 - v0.3.0) Add light/dark mode
 - [ ] Show track cover
 - [x] (04/26/2025 - v0.2.0) Animate lyrics scroll
 - [ ] Add shuffle and loop control

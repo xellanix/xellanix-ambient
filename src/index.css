@@ -19,11 +19,7 @@
 	--font-sans: "Figtree", sans-serif;
 }
 
-@layer utilities {
-	.dark [data-mode="dark"] {
-		/* Dark mode custom styles */
-	}
-}
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
 	font-family: Figtree, sans-serif;
@@ -38,8 +34,19 @@
 	@apply scroll-smooth;
 }
 .progress-bar {
-	@apply bg-gradient-to-r from-blue-500 to-gray-300 dark:to-gray-600;
-	background-size: var(--progress) 100%;
+	@apply bg-gray-300 dark:bg-gray-600 appearance-none rounded-lg;
+	background: linear-gradient(
+		to right,
+		theme("colors.blue.500") var(--progress),
+		theme("colors.gray.300") var(--progress)
+	);
+	background-size: 100% 100%;
+}
+.progress-bar::-webkit-slider-thumb {
+	@apply w-4 h-4 bg-blue-500 dark:bg-blue-600 rounded-full cursor-pointer;
+}
+.progress-bar::-moz-range-thumb {
+	@apply w-4 h-4 bg-blue-500 dark:bg-blue-600 rounded-full cursor-pointer;
 }
 input[type="file"] {
 	@apply hidden;

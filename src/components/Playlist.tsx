@@ -199,13 +199,13 @@ const Playlist: React.FC<PlaylistProps> = ({
 
     return (
         <div
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
+            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}>
-            <h2 className="text-lg font-semibold mb-2">Playlist</h2>
-            {error && <p className="text-red-500 mb-2">{error}</p>}
+            <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Playlist</h2>
+            {error && <p className="text-red-500 dark:text-red-400 mb-3">{error}</p>}
             <label className="block mb-4">
-                <span className="inline-block px-4 py-2 bg-xellanix-600 dark:bg-xellanix-300 text-white rounded-lg cursor-pointer hover:bg-xellanix-600 ">
+                <span className="inline-block px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors">
                     Add Files
                 </span>
                 <input
@@ -222,22 +222,26 @@ const Playlist: React.FC<PlaylistProps> = ({
                     .map((track, index) => (
                         <li
                             key={index}
-                            className={`flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                                index === currentTrackIndex ? "bg-gray-200 dark:bg-gray-600" : ""
+                            className={`flex items-center justify-between p-2 cursor-pointer rounded-md transition-colors ${
+                                index === currentTrackIndex
+                                    ? "bg-gray-200 dark:bg-gray-600"
+                                    : "hover:bg-gray-100 dark:hover:bg-gray-700"
                             }`}
                             onClick={() => changeTrack(index)}>
-                            <div className="flex items-center">
+                            <div className="flex items-center text-gray-900 dark:text-gray-200">
                                 {track.hasLyrics && <span className="mr-2">🎵</span>}
                                 <span>{track.name}</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <span className="text-sm text-gray-500">{track.codec}</span>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                    {track.codec}
+                                </span>
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         removeTrack(index);
                                     }}
-                                    className="text-red-500 hover:text-red-700">
+                                    className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">
                                     ✕
                                 </button>
                             </div>

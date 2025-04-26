@@ -61,7 +61,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const isTrackSelected = currentTrackIndex >= 0 && currentTrackIndex < playlist.length;
 
     return (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-4">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6 border border-gray-200 dark:border-gray-700">
             <audio
                 ref={audioRef}
                 src={isTrackSelected ? playlist[currentTrackIndex]?.url : undefined}
@@ -76,13 +76,13 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 }}
                 onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
             />
-            <h2 className="text-lg font-semibold mb-2">
+            <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
                 {isTrackSelected ? playlist[currentTrackIndex]?.name : "No track selected"}
             </h2>
             <div className="flex items-center mb-4">
                 <button
                     onClick={togglePlay}
-                    className="p-2 bg-xellanix-600 dark:bg-xellanix-300 text-white rounded-full mr-2 disabled:opacity-50"
+                    className="p-3 bg-blue-500 dark:bg-blue-600 text-white rounded-full mr-3 hover:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     disabled={!isTrackSelected}>
                     {isPlaying ? "⏸" : "▶️"}
                 </button>
@@ -93,11 +93,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                         max={duration || 100}
                         value={currentTime}
                         onChange={handleSeek}
-                        className="w-full progress-bar"
+                        className="w-full progress-bar h-2 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={!isTrackSelected}
                         style={{ "--progress": `${(currentTime / (duration || 1)) * 100}%` } as any}
                     />
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mt-1">
                         <span>{formatTime(currentTime)}</span>
                         <span>{formatTime(duration)}</span>
                     </div>

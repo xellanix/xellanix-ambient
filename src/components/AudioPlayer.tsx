@@ -155,6 +155,28 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         }
     };
 
+    const playPrevious = () => {
+        if (currentTrackIndex > 0) {
+            playTrack(currentTrackIndex - 1);
+        } else if (loop === "playlist" && queue.length > 0) {
+            playTrack(queue.length - 1); // Play last track in queue
+        }
+    };
+
+    const playNext = () => {
+        if (currentTrackIndex + 1 < queue.length) {
+            playTrack(currentTrackIndex + 1);
+        } else if (loop === "playlist" && queue.length > 0) {
+            playTrack(0); // Restart queue
+        } else {
+            setIsPlaying(false);
+            setCurrentTrackIndex(-1);
+            setCurrentTime(0);
+            setLyrics([]);
+            setCurrentLyricIndex(-1);
+        }
+    };
+
     const handleEnded = async () => {
         if (loop === "track" && currentTrackIndex >= 0) {
             await playTrack(currentTrackIndex); // Replay current track
@@ -175,6 +197,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     };
 
     const isTrackSelected = currentTrackIndex >= 0 && currentTrackIndex < queue.length;
+    const canPlayPrevious = currentTrackIndex > 0 || (loop === "playlist" && queue.length > 0);
+    const canPlayNext =
+        currentTrackIndex + 1 < queue.length || (loop === "playlist" && queue.length > 0);
 
     return (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6 border border-gray-200 dark:border-gray-700">
@@ -190,10 +215,25 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
             </h2>
             <div className="flex items-center mb-4">
                 <button
+                    onClick={playPrevious}
+                    className="p-3 bg-blue-500 dark:bg-blue-600 text-white rounded-full mr-2 hover:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    disabled={!canPlayPrevious}
+                    title="Previous Track">
+                    ◄◄
+                </button>
+                <button
                     onClick={togglePlay}
-                    className="p-3 bg-blue-500 dark:bg-blue-600 text-white rounded-full mr-3 hover:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    disabled={!isTrackSelected}>
+                    className="p-3 bg-blue-500 dark:bg-blue-600 text-white rounded-full mr-2 hover:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    disabled={!isTrackSelected}
+                    title={isPlaying ? "Pause" : "Play"}>
                     {isPlaying ? "⏸" : "▶️"}
+                </button>
+                <button
+                    onClick={playNext}
+                    className="p-3 bg-blue-500 dark:bg-blue-600 text-white rounded-full mr-3 hover:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    disabled={!canPlayNext}
+                    title="Next Track">
+                    ►►
                 </button>
                 <div className="flex-1">
                     <input
@@ -213,8 +253,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 </div>
             </div>
             <div className="flex items-center space-x-3">
-                <div className="flex items-center">
-                    <label className="text-gray-600 dark:text-gray-300 mr-2">Volume:</label>
+                <div className="flex items-center space-x-2">
+                    <label className="text-gray-600 dark:text-gray-300">Volume:</label>
                     <input
                         type="range"
                         min="0"
@@ -224,6 +264,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                         onChange={handleVolumeChange}
                         className="w-24 h-2 rounded-lg cursor-pointer bg-gray-300 dark:bg-gray-600"
                     />
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                        {Math.round(volume * 100)}%
+                    </span>
                 </div>
                 <button
                     onClick={toggleShuffle}

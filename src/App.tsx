@@ -6,7 +6,7 @@ import { Track, LyricLine } from "./types";
 
 const App: React.FC = () => {
     const [playlist, setPlaylist] = useState<Track[]>([]);
-    const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
+    const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(-1);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [currentTime, setCurrentTime] = useState<number>(0);
     const [duration, setDuration] = useState<number>(0);
@@ -14,10 +14,10 @@ const App: React.FC = () => {
     const [currentLyricIndex, setCurrentLyricIndex] = useState<number>(-1);
     const [darkMode, setDarkMode] = useState<boolean>(true);
     const [showLyrics, setShowLyrics] = useState<boolean>(true);
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const lyricsRef = useRef<HTMLDivElement>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const lyricsRef = useRef<HTMLDivElement | null>(null);
 
-    // Sync lyrics with current time
+    // Sync lyrics with current time and handle scroll reset
     useEffect(() => {
         if (lyrics.length && currentTime) {
             const index = lyrics.findIndex((lyric, i) => {
@@ -31,8 +31,11 @@ const App: React.FC = () => {
                     lyricElement?.scrollIntoView({ behavior: "smooth", block: "center" });
                 }
             }
+        } else if (lyricsRef.current && (currentTime === 0 || !lyrics.length)) {
+            // Scroll to top when track changes or replays
+            lyricsRef.current.scrollTop = 0;
         }
-    }, [currentTime, lyrics, currentLyricIndex]);
+    }, [currentTime, lyrics, currentLyricIndex, currentTrackIndex]);
 
     const toggleDarkMode = () => {
         setDarkMode(!darkMode);
@@ -88,6 +91,8 @@ const App: React.FC = () => {
                 setCurrentLyricIndex={setCurrentLyricIndex}
                 audioRef={audioRef}
                 setIsPlaying={setIsPlaying}
+                setCurrentTime={setCurrentTime}
+                setDuration={setDuration}
             />
         </div>
     );

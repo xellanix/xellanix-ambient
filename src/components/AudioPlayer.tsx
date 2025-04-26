@@ -2,7 +2,7 @@ import React from "react";
 import { Track } from "../types";
 
 interface AudioPlayerProps {
-    audioRef: React.RefObject<HTMLAudioElement>;
+    audioRef: React.RefObject<HTMLAudioElement | null>;
     playlist: Track[];
     currentTrackIndex: number;
     isPlaying: boolean;
@@ -33,7 +33,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     setCurrentTrackIndex,
 }) => {
     const togglePlay = () => {
-        if (audioRef.current) {
+        if (audioRef.current && currentTrackIndex >= 0) {
             if (isPlaying) {
                 audioRef.current.pause();
             } else {
@@ -58,23 +58,32 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         }
     };
 
+    const isTrackSelected = currentTrackIndex >= 0 && currentTrackIndex < playlist.length;
+
     return (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-4">
             <audio
                 ref={audioRef}
-                src={playlist[currentTrackIndex]?.url}
+                src={isTrackSelected ? playlist[currentTrackIndex]?.url : undefined}
                 onTimeUpdate={handleTimeUpdate}
-                onEnded={() => setCurrentTrackIndex((currentTrackIndex + 1) % playlist.length)}
+                onEnded={() => {
+                    if (currentTrackIndex + 1 < playlist.length) {
+                        setCurrentTrackIndex(currentTrackIndex + 1);
+                    } else {
+                        setIsPlaying(false);
+                        setCurrentTrackIndex(-1);
+                    }
+                }}
                 onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
             />
             <h2 className="text-lg font-semibold mb-2">
-                {playlist[currentTrackIndex]?.name || "No track selected"}
+                {isTrackSelected ? playlist[currentTrackIndex]?.name : "No track selected"}
             </h2>
             <div className="flex items-center mb-4">
                 <button
                     onClick={togglePlay}
-                    className="p-2 bg-blue-500 text-white rounded-full mr-2"
-                    disabled={!playlist.length}>
+                    className="p-2 bg-blue-500 text-white rounded-full mr-2 disabled:opacity-50"
+                    disabled={!isTrackSelected}>
                     {isPlaying ? "⏸" : "▶️"}
                 </button>
                 <div className="flex-1">
@@ -85,6 +94,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                         value={currentTime}
                         onChange={handleSeek}
                         className="w-full progress-bar"
+                        disabled={!isTrackSelected}
                         style={{ "--progress": `${(currentTime / (duration || 1)) * 100}%` } as any}
                     />
                     <div className="flex justify-between text-sm">

@@ -8,8 +8,10 @@ interface PlaylistProps {
     setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
     setLyrics: React.Dispatch<React.SetStateAction<LyricLine[]>>;
     setCurrentLyricIndex: React.Dispatch<React.SetStateAction<number>>;
-    audioRef: React.RefObject<HTMLAudioElement>;
+    audioRef: React.RefObject<HTMLAudioElement | null>;
     setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
+    setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
+    setDuration: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const parseLrc = (lrcContent: string): LyricLine[] => {
@@ -52,6 +54,8 @@ const Playlist: React.FC<PlaylistProps> = ({
     setCurrentLyricIndex,
     audioRef,
     setIsPlaying,
+    setCurrentTime,
+    setDuration,
 }) => {
     const [error, setError] = useState<string | null>(null);
 
@@ -176,11 +180,14 @@ const Playlist: React.FC<PlaylistProps> = ({
             URL.revokeObjectURL(track.lyricsUrl);
         }
         setPlaylist((prev) => prev.filter((_, i) => i !== index));
+
         if (index === currentTrackIndex) {
-            setCurrentTrackIndex(0);
+            setCurrentTrackIndex(-1);
             setLyrics([]);
             setCurrentLyricIndex(-1);
             setIsPlaying(false);
+            setCurrentTime(0);
+            setDuration(0);
             if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.src = "";

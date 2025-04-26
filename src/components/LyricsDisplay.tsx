@@ -4,7 +4,7 @@ import { LyricLine } from "../types";
 interface LyricsDisplayProps {
     lyrics: LyricLine[];
     currentLyricIndex: number;
-    lyricsRef: React.RefObject<HTMLDivElement>;
+    lyricsRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const LyricsDisplay: React.FC<LyricsDisplayProps> = ({ lyrics, currentLyricIndex, lyricsRef }) => {

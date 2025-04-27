@@ -47,3 +47,5 @@ yarn-error.log*
 
 /public/*.flac
 /public/*.lrc
+.npmrc
+config.toml

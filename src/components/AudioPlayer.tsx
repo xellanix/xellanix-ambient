@@ -1,5 +1,21 @@
 import React, { useState } from "react";
 import { Track, LyricLine } from "../types";
+import Slider, { SliderInput, useSlider } from "./Slider/Slider";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+    MuteIcon,
+    NextIcon,
+    PauseIcon,
+    PlayIcon,
+    PreviousIcon,
+    RepeatIcon,
+    RepeatOne01Icon,
+    ShuffleIcon,
+    VolumeHighIcon,
+    VolumeMute02Icon,
+    VolumeOffIcon,
+} from "@hugeicons-pro/core-solid-rounded";
+import { Button } from "./Button/Button";
 
 interface AudioPlayerProps {
     audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -49,7 +65,6 @@ const parseLrc = (lrcContent: string): LyricLine[] => {
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({
     audioRef,
-    playlist,
     queue,
     currentTrackIndex,
     isPlaying,
@@ -65,9 +80,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     loop,
     toggleShuffle,
     toggleLoop,
-    isIslandExpanded,
 }) => {
-    const [volume, setVolume] = useState<number>(1);
+    const [volume, setVolume] = useState<number>(100);
+    const scaleSliderInputRef = useSlider();
+    const volumeSliderInputRef = useSlider();
 
     const togglePlay = () => {
         if (audioRef.current && currentTrackIndex >= 0) {
@@ -91,19 +107,18 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         }
     };
 
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSeek = (newTime: number) => {
+        setCurrentTime(newTime);
         if (audioRef.current) {
-            const newTime = parseFloat(e.target.value);
             audioRef.current.currentTime = newTime;
-            setCurrentTime(newTime);
         }
     };
 
-    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newVolume = parseFloat(e.target.value);
-        setVolume(newVolume);
+    const handleVolumeChange = (newVolume: number) => {
+        const clampedVolume = Math.max(0, Math.min(100, newVolume));
+        setVolume(clampedVolume);
         if (audioRef.current) {
-            audioRef.current.volume = newVolume;
+            audioRef.current.volume = clampedVolume / 100;
         }
     };
 
@@ -196,12 +211,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const canPlayPrevious = currentTrackIndex > 0 || (loop === "playlist" && queue.length > 0);
     const canPlayNext =
         currentTrackIndex + 1 < queue.length || (loop === "playlist" && queue.length > 0);
-    const progressPercent = duration ? (currentTime / duration) * 100 : 0;
-    const volumePercent = volume * 100;
 
     return (
         <div
-            className={`group relative bg-black dark:bg-gray-900 w-40 h-4 rounded-2xl overflow-hidden transition-[width,height] duration-700 ease-in-out hover:w-[90vw] hover:md:w-[800px] hover:h-48 hover:md:h-24 left-1/2 transform -translate-x-1/2`}
+            className={`group relative bg-[var(--bg-tertiary)] shadow-md w-40 h-4 rounded-2xl overflow-hidden transition-[width,height,background] duration-700 ease-in-out hover:w-[90vw] hover:md:w-[800px] hover:h-48 hover:md:h-24 hover:bg-[var(--bg-primary)] left-1/2 transform -translate-x-1/2`}
             style={{ transformOrigin: "center bottom" }}>
             <audio
                 ref={audioRef}
@@ -219,14 +232,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                         style={{
                             background: queue[currentTrackIndex]?.coverUrl
                                 ? `url(${queue[currentTrackIndex].coverUrl}) center/cover`
-                                : "rgb(55, 65, 81)",
+                                : "var(--bg-tertiary)",
                         }}></div>
                     <div className="truncate">
-                        <h2 className="text-white dark:text-gray-100 text-base font-semibold m-0 truncate">
+                        <h2 className="text-[var(--text-normal)] text-base font-semibold m-0 truncate">
                             {isTrackSelected ? queue[currentTrackIndex]?.name : "No track selected"}
                         </h2>
                         {isTrackSelected && queue[currentTrackIndex]?.artist && (
-                            <p className="text-gray-400 dark:text-gray-500 text-xs m-0 truncate">
+                            <p className="text-[var(--text-secondary)] text-xs m-0 truncate">
                                 {queue[currentTrackIndex].artist}
                             </p>
                         )}
@@ -236,44 +249,45 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 {/* Center: Controls and Progress */}
                 <div className="flex flex-col items-center gap-3 w-full max-w-xs h-full justify-center">
                     <div className="flex gap-2 justify-center">
-                        <button
+                        <Button
+                            styleType="primary"
                             onClick={playPrevious}
-                            className="w-5 h-5 bg-gray-400 dark:bg-gray-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                             disabled={!canPlayPrevious}
                             title="Previous Track">
-                            ◄◄
-                        </button>
-                        <button
+                            <HugeiconsIcon icon={PreviousIcon} className="size-3" strokeWidth={0} />
+                        </Button>
+                        <Button
+                            styleType="primary"
                             onClick={togglePlay}
-                            className="w-5 h-5 bg-gray-400 dark:bg-gray-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                             disabled={!isTrackSelected}
                             title={isPlaying ? "Pause" : "Play"}>
-                            {isPlaying ? "⏸" : "▶️"}
-                        </button>
-                        <button
+                            <HugeiconsIcon
+                                icon={isPlaying ? PauseIcon : PlayIcon}
+                                className="size-3"
+                                strokeWidth={0}
+                            />
+                        </Button>
+                        <Button
+                            styleType="primary"
                             onClick={playNext}
-                            className="w-5 h-5 bg-gray-400 dark:bg-gray-500 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                             disabled={!canPlayNext}
                             title="Next Track">
-                            ►►
-                        </button>
-                        <button
+                            <HugeiconsIcon icon={NextIcon} className="size-3" strokeWidth={0} />
+                        </Button>
+                        <Button
+                            styleType={shuffle ? "accent" : "primary"}
                             onClick={toggleShuffle}
-                            className={`w-5 h-5 rounded-md transition-colors ${
-                                shuffle
-                                    ? "bg-blue-500 dark:bg-blue-600"
-                                    : "bg-gray-400 dark:bg-gray-500"
-                            }`}
+                            className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                             title={shuffle ? "Disable Shuffle" : "Enable Shuffle"}>
-                            🔀
-                        </button>
-                        <button
+                            <HugeiconsIcon icon={ShuffleIcon} className="size-3" strokeWidth={0} />
+                        </Button>
+                        <Button
+                            styleType={loop !== "none" ? "accent" : "primary"}
                             onClick={toggleLoop}
-                            className={`w-5 h-5 rounded-md transition-colors ${
-                                loop !== "none"
-                                    ? "bg-blue-500 dark:bg-blue-600"
-                                    : "bg-gray-400 dark:bg-gray-500"
-                            }`}
+                            className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                             title={
                                 loop === "none"
                                     ? "Loop Track"
@@ -281,28 +295,27 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                                     ? "Loop Playlist"
                                     : "Disable Loop"
                             }>
-                            {loop === "track" ? "🔂" : "🔁"}
-                        </button>
+                            <HugeiconsIcon
+                                icon={loop === "track" ? RepeatOne01Icon : RepeatIcon}
+                                className="size-3"
+                                strokeWidth={0}
+                            />
+                        </Button>
                     </div>
                     <div className="flex items-center gap-2 w-full justify-center">
-                        <span className="text-white dark:text-gray-100 text-[10px] w-8 text-center">
+                        <span className="text-[var(--text-normal)] text-xs w-8 text-center">
                             {formatTime(currentTime)}
                         </span>
-                        <div className="bg-gray-600 dark:bg-gray-700 flex-1 h-1.5 rounded-full overflow-hidden max-w-[150px] relative">
-                            <div
-                                className="bg-gray-300 dark:bg-gray-400 h-full absolute left-0 top-0 z-10"
-                                style={{ width: `${progressPercent}%` }}></div>
-                            <input
-                                type="range"
-                                min="0"
-                                max={duration || 100}
-                                value={currentTime}
-                                onChange={handleSeek}
-                                className="w-full h-full bg-transparent cursor-pointer z-20 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={!isTrackSelected}
-                            />
-                        </div>
-                        <span className="text-white dark:text-gray-100 text-[10px] w-8 text-center">
+                        <Slider
+                            sliderInputRef={scaleSliderInputRef}
+                            className="flex-1 max-w-[150px]"
+                            min={0}
+                            max={duration || 100}
+                            defaultValue={currentTime}
+                            step={1}
+                            onChange={handleSeek}
+                        />
+                        <span className="text-[var(--text-normal)] text-xs w-8 text-center">
                             {formatTime(duration)}
                         </span>
                     </div>
@@ -310,33 +323,40 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
                 {/* Right: Volume */}
                 <div className="flex items-center gap-2 flex-1 justify-end min-w-0 h-full">
-                    <button
-                        className="w-4 h-4 bg-gray-400 dark:bg-gray-500 rounded-md"
-                        title="Mute/Unmute"
+                    <Button
+                        styleType="secondary"
                         onClick={() => {
-                            const newVolume = volume === 0 ? 1 : 0;
+                            const newVolume = volume === 0 ? 100 : 0;
                             setVolume(newVolume);
-                            if (audioRef.current) audioRef.current.volume = newVolume;
-                        }}>
-                        {volume === 0 ? "🔇" : "🔊"}
-                    </button>
-                    <div className="bg-gray-600 dark:bg-gray-700 w-20 h-1.5 rounded-full overflow-hidden relative">
-                        <div
-                            className="bg-gray-300 dark:bg-gray-400 h-full absolute left-0 top-0 z-10"
-                            style={{ width: `${volumePercent}%` }}></div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={volume}
-                            onChange={handleVolumeChange}
-                            className="w-full h-full bg-transparent cursor-pointer z-20"
+                            if (audioRef.current) audioRef.current.volume = newVolume / 100;
+                        }}
+                        className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
+                        title={volume === 0 ? "Unmute" : "Mute"}>
+                        <HugeiconsIcon
+                            icon={volume === 0 ? VolumeOffIcon : VolumeHighIcon}
+                            className="size-3"
+                            strokeWidth={0}
                         />
+                    </Button>
+                    <Slider
+                        sliderInputRef={volumeSliderInputRef}
+                        className="flex-1"
+                        min={0}
+                        max={100}
+                        defaultValue={volume}
+                        step={1}
+                        onChange={handleVolumeChange}
+                    />
+                    <div className="relative items-center flex">
+                        <SliderInput
+                            sliderInputRef={volumeSliderInputRef}
+                            className="text-xs w-9"
+                            defaultValue={volume}
+                        />
+                        <span className="absolute right-0 text-xs text-[var(--text-normal)] pr-1">
+                            %
+                        </span>
                     </div>
-                    <span className="text-white dark:text-gray-100 text-[10px] whitespace-nowrap">
-                        {Math.round(volume * 100)}%
-                    </span>
                 </div>
             </div>
         </div>

@@ -25,7 +25,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
 
     return (
         <div
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6 border border-gray-200 dark:border-gray-700 max-h-64 overflow-y-auto scroll-container"
+            className="bg-[var(--bg-primary)] p-6 rounded-lg shadow-md mb-6 border border-gray-200 dark:border-gray-700 max-h-64 overflow-y-auto scroll-container"
             ref={lyricsRef}>
             {lyrics.length ? (
                 lyrics.map((lyric, index) => (
@@ -41,7 +41,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
                     </p>
                 ))
             ) : (
-                <p className="text-center text-gray-500 dark:text-gray-400">No lyrics available</p>
+                <p className="text-center text-[var(--text-tertiary)]">No lyrics available</p>
             )}
         </div>
     );

@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { Track, LyricLine } from "../types";
+import { Button } from "./Button/Button";
 
 interface PlaylistProps {
     playlist: Track[];
@@ -145,13 +146,11 @@ const Playlist: React.FC<PlaylistProps> = ({
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Playlist</h2>
-            <button
-                onClick={handleAddTrack}
-                className="mb-4 px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors">
+        <div className="bg-[var(--bg-primary)] p-4 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold text-[var(--text-normal)] mb-4">Playlist</h2>
+            <Button styleType="accent" onClick={handleAddTrack}>
                 Add Track
-            </button>
+            </Button>
             <input
                 type="file"
                 accept="audio/*"
@@ -180,14 +179,14 @@ const Playlist: React.FC<PlaylistProps> = ({
                         <div
                             className="flex-1 cursor-pointer truncate"
                             onClick={() => handlePlayTrack(index)}>
-                            <span className="text-gray-900 dark:text-white">{track.name}</span>
+                            <span className="text-[var(--text-normal)]">{track.name}</span>
                             {track.artist && (
-                                <span className="text-sm text-gray-600 dark:text-gray-300 ml-2">
+                                <span className="text-sm text-[var(--text-secondary)] ml-2">
                                     - {track.artist}
                                 </span>
                             )}
                             {track.codec && (
-                                <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                                <span className="text-sm text-[var(--text-tertiary)] ml-2">
                                     ({track.codec})
                                 </span>
                             )}

@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@import "../../index.css";
+
+.xellanix-slider {
+	--xellanix-slider-thumb-size: 16px;
+}
+
+.xellanix-slider:focus-visible {
+	@apply outline-2 outline-offset-4 rounded-xs;
+}
+
+.xellanix-slider:hover .xellanix-slider-thumb,
+.xellanix-slider:focus-visible .xellanix-slider-thumb {
+	@apply opacity-100;
+}
+
+.xellanix-slider > * {
+	@apply rounded-full;
+}
+
+.xellanix-slider-bar {
+	@apply w-[calc(100%-var(--xellanix-slider-thumb-size))] h-1.5 m-[0_calc(var(--xellanix-slider-thumb-size)/2)] absolute bg-linear-[90deg,var(--bg-accent)_0%,var(--bg-accent)_calc(var(--xellanix-slider-progress)*100%),var(--bg-secondary)_calc(var(--xellanix-slider-progress)*100%),var(--bg-secondary)_100%];
+}
+
+.xellanix-slider-thumb {
+	@apply opacity-0 size-[var(--xellanix-slider-thumb-size)] border-4 border-[var(--bg-accent)] bg-gray-200 relative cursor-pointer select-none left-[calc((100%_-_var(--xellanix-slider-thumb-size))_*_var(--xellanix-slider-progress))];
+	@apply dark:bg-gray-100;
+
+	@apply [transition:opacity_150ms];
+}

@@ -4,6 +4,7 @@ import LyricsDisplay from "./components/LyricsDisplay";
 import Playlist from "./components/Playlist";
 import Queue from "./components/Queue";
 import { Track, LyricLine } from "./types";
+import { Button } from "./components/Button/Button";
 
 const App: React.FC = () => {
     const [playlist, setPlaylist] = useState<Track[]>([]);
@@ -97,17 +98,17 @@ const App: React.FC = () => {
     return (
         <div className="container mx-auto p-4 max-w-4xl bg-gray-100 dark:bg-gray-900 min-h-screen relative">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Music Player</h1>
+                <h1 className="text-3xl font-bold text-[var(--text-normal)]">Music Player</h1>
                 <div className="flex space-x-3">
                     <button
                         onClick={toggleLyrics}
-                        className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        className="p-2 rounded-full bg-[var(--bg-secondary)] text-gray-800 dark:text-gray-200 hover:bg-[var(--bg-tertiary)] transition-colors"
                         title={showLyrics ? "Hide Lyrics" : "Show Lyrics"}>
                         {showLyrics ? "🎵" : "🎵"}
                     </button>
                     <button
                         onClick={toggleDarkMode}
-                        className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        className="p-2 rounded-full bg-[var(--bg-secondary)] text-gray-800 dark:text-gray-200 hover:bg-[var(--bg-tertiary)] transition-colors"
                         title={darkMode ? "Light Mode" : "Dark Mode"}>
                         {darkMode ? "☀️" : "🌙"}
                     </button>
@@ -123,24 +124,16 @@ const App: React.FC = () => {
                 />
             )}
             <div className="flex space-x-2 mb-4">
-                <button
-                    onClick={() => setViewMode("playlist")}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                        viewMode === "playlist"
-                            ? "bg-blue-500 dark:bg-blue-600 text-white"
-                            : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                    }`}>
+                <Button
+                    styleType={viewMode === "playlist" ? "accent" : "primary"}
+                    onClick={() => setViewMode("playlist")}>
                     Playlist
-                </button>
-                <button
-                    onClick={() => setViewMode("queue")}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                        viewMode === "queue"
-                            ? "bg-blue-500 dark:bg-blue-600 text-white"
-                            : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                    }`}>
+                </Button>
+                <Button
+                    styleType={viewMode === "queue" ? "accent" : "primary"}
+                    onClick={() => setViewMode("queue")}>
                     Queue
-                </button>
+                </Button>
             </div>
             {viewMode === "playlist" ? (
                 <Playlist

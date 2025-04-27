@@ -21,6 +21,30 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@utility light-theme-set {
+	@apply [--text-accent:theme(colors.xellanix.50/100%)];
+	@apply [--text-normal:theme(colors.gray.900)];
+	@apply [--text-secondary:theme(colors.gray.600)];
+	@apply [--text-tertiary:theme(colors.gray.400)];
+	
+	@apply [--bg-accent:theme(colors.xellanix.600/100%)];
+	@apply [--bg-primary:theme(colors.white)];
+	@apply [--bg-secondary:theme(colors.gray.200)];
+	@apply [--bg-tertiary:theme(colors.gray.300)];
+}
+
+@utility dark-theme-set {
+	@apply [--text-accent:theme(colors.xellanix.900/100%)];
+	@apply [--text-normal:theme(colors.white)];
+	@apply [--text-secondary:theme(colors.gray.400)];
+	@apply [--text-tertiary:theme(colors.gray.600)];
+
+	@apply [--bg-accent:theme(colors.xellanix.300/100%)];
+	@apply [--bg-primary:theme(colors.gray.800)];
+	@apply [--bg-secondary:theme(colors.gray.700)];
+	@apply [--bg-tertiary:theme(colors.gray.600)];
+}
+
 :root {
 	font-family: Figtree, sans-serif;
 
@@ -29,49 +53,27 @@
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 
+	@apply light-theme-set;
+	@apply dark:dark-theme-set;
+
 	--progress: 0%;
 }
 
 .scroll-container {
 	@apply scroll-smooth;
 }
-.progress-bar {
-	@apply bg-gray-300 dark:bg-gray-600 appearance-none rounded-lg;
-	background: linear-gradient(
-		to right,
-		theme("colors.blue.500") var(--progress),
-		theme("colors.gray.300") var(--progress)
-	);
-	background-size: 100% 100%;
-}
-.progress-bar::-webkit-slider-thumb {
-	@apply w-4 h-4 bg-blue-500 dark:bg-blue-600 rounded-full cursor-pointer;
-}
-.progress-bar::-moz-range-thumb {
-	@apply w-4 h-4 bg-blue-500 dark:bg-blue-600 rounded-full cursor-pointer;
-}
-input[type="range"] {
-	@apply appearance-none rounded-lg;
-}
-input[type="range"]::-webkit-slider-thumb {
-	@apply w-4 h-4 bg-blue-500 dark:bg-blue-600 rounded-full cursor-pointer;
-}
-input[type="range"]::-moz-range-thumb {
-	@apply w-4 h-4 bg-blue-500 dark:bg-blue-600 rounded-full cursor-pointer;
-}
 input[type="file"] {
 	@apply hidden;
 }
 
-/* Ensure range input thumb is hidden */
-input[type="range"]::-webkit-slider-thumb {
+/* Remove default number input arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
 	-webkit-appearance: none;
-	appearance: none;
-	width: 0;
-	height: 0;
+	margin: 0;
 }
 
-input[type="range"]::-moz-range-thumb {
-	width: 0;
-	height: 0;
+input[type="number"] {
+	appearance: textfield;
+	-moz-appearance: textfield;
 }

@@ -26,6 +26,12 @@ export function Button({ className, styleType, children, ...props }: ButtonProps
             type="button"
             className={cn(
                 "btn",
+                "[--button-p:theme(padding.2)_theme(padding.4)]",
+                "[--button-text-size:theme(fontSize.base)]",
+                "[--button-text-line-height:theme(lineHeight.6)]",
+                "[--button-depth:-0.25rem]",
+                "[--button-depth-jump:-0.375rem]",
+                "[--button-depth-shrink:-0.125rem]",
                 styleType,
                 className && (isString(className) ? className : className!.base)
             )}

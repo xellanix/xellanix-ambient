@@ -17,7 +17,7 @@ interface PlaylistProps {
     setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
     setDuration: React.Dispatch<React.SetStateAction<number>>;
     setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
-    playTrack: (index: number) => Promise<void>; // Add this prop
+    playTrack: (index: number) => Promise<void>;
 }
 
 const Playlist: React.FC<PlaylistProps> = ({
@@ -34,37 +34,43 @@ const Playlist: React.FC<PlaylistProps> = ({
     setQueue,
     playTrack,
 }) => {
-    const audioInputRef = useRef<HTMLInputElement>(null);
-    const lyricInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleAddTrack = () => {
-        audioInputRef.current?.click();
+        fileInputRef.current?.click();
     };
 
-    const handleAudioFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const audioFiles = e.target.files;
-        if (!audioFiles || audioFiles.length === 0) return;
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
-        lyricInputRef.current?.click();
-        const lyricFiles = lyricInputRef.current?.files;
+        // Separate audio and lyric files
+        const audioFiles: File[] = [];
+        const lyricFiles: File[] = [];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.name.endsWith(".lrc")) {
+                lyricFiles.push(file);
+            } else if (file.type.startsWith("audio/")) {
+                audioFiles.push(file);
+            }
+        }
 
         const newTracks: Track[] = [];
-        for (let i = 0; i < audioFiles.length; i++) {
-            const file = audioFiles[i];
-            const lyricFile =
-                lyricFiles && lyricFiles[i] && lyricFiles[i].name.includes(".lrc")
-                    ? lyricFiles[i]
-                    : null;
+        for (const audioFile of audioFiles) {
+            // Find matching lyric file by name (e.g., "song.mp3" matches "song.lrc")
+            const baseName = audioFile.name.replace(/\.[^/.]+$/, "");
+            const lyricFile = lyricFiles.find((lyric) => lyric.name === `${baseName}.lrc`);
 
             const newTrack: Track = {
-                name: file.name.replace(/\.[^/.]+$/, ""),
+                name: audioFile.name.replace(/\.[^/.]+$/, ""),
                 artist: "Unknown Artist",
-                url: URL.createObjectURL(file),
-                hasLyrics: lyricFile !== null,
+                url: URL.createObjectURL(audioFile),
+                hasLyrics: !!lyricFile,
                 lyricsUrl: lyricFile ? URL.createObjectURL(lyricFile) : undefined,
                 album: "Unknown Album",
-                file,
-                codec: file.type,
+                file: audioFile,
+                codec: audioFile.type,
             };
             newTracks.push(newTrack);
         }
@@ -72,12 +78,7 @@ const Playlist: React.FC<PlaylistProps> = ({
         setPlaylist((prev) => [...prev, ...newTracks]);
         setQueue((prev) => [...prev, ...newTracks]);
 
-        if (audioInputRef.current) audioInputRef.current.value = "";
-        if (lyricInputRef.current) lyricInputRef.current.value = "";
-    };
-
-    const handleLyricFileChange = () => {
-        // Triggered to allow lyric file selection
+        if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
     const handleRemoveTrack = (index: number) => {
@@ -95,13 +96,11 @@ const Playlist: React.FC<PlaylistProps> = ({
                     audioRef.current.src = "";
                 }
             }
-            // Remove the index adjustment logic
             return newPlaylist;
         });
         setQueue((prev) => {
             const removedTrack = prev[index];
             const newQueue = prev.filter((_, i) => i !== index);
-            // Adjust currentTrackIndex by finding the same track in the new queue
             if (
                 index <= currentTrackIndex &&
                 currentTrackIndex >= 0 &&
@@ -116,7 +115,56 @@ const Playlist: React.FC<PlaylistProps> = ({
     };
 
     const handlePlayTrack = async (index: number) => {
-        await playTrack(index); // Delegate to AudioPlayer's playTrack
+        setCurrentTrackIndex(index);
+        setCurrentTime(0);
+        setLyrics([]);
+        setCurrentLyricIndex(-1);
+
+        const track = playlist[index];
+        console.log(
+            "Playing track:",
+            track.name,
+            "Has lyrics:",
+            track.hasLyrics,
+            "Lyrics URL:",
+            track.lyricsUrl
+        );
+
+        if (track.hasLyrics && track.lyricsUrl) {
+            try {
+                const response = await fetch(track.lyricsUrl);
+                const content = await response.text();
+                console.log("Raw lyrics content:", content);
+
+                const parsedLyrics: LyricLine[] = content
+                    .split("\n")
+                    .map((line) => {
+                        const match = line.match(/\[(\d{2}):(\d{2})[.:](\d{2,3})\](.*)/);
+                        if (match) {
+                            const minutes = parseInt(match[1]);
+                            const seconds = parseInt(match[2]);
+                            const milliseconds = parseInt(match[3].padEnd(3, "0"));
+                            const time = minutes * 60 + seconds + milliseconds / 1000;
+                            const text = match[4].trim();
+                            console.log("Parsed lyric line:", { time, text });
+                            return text ? { time, text } : null;
+                        }
+                        return null;
+                    })
+                    .filter((line): line is LyricLine => line !== null);
+
+                console.log("Parsed lyrics:", parsedLyrics);
+                setLyrics(parsedLyrics);
+            } catch (err) {
+                console.error("Failed to load lyrics:", err);
+                setLyrics([]);
+            }
+        } else {
+            console.log("No lyrics available for this track.");
+            setLyrics([]);
+        }
+
+        await playTrack(index);
     };
 
     return (
@@ -127,18 +175,10 @@ const Playlist: React.FC<PlaylistProps> = ({
             </Button>
             <input
                 type="file"
-                accept="audio/*"
+                accept="audio/*,.lrc"
                 multiple
-                ref={audioInputRef}
-                onChange={handleAudioFileChange}
-                className="hidden"
-            />
-            <input
-                type="file"
-                accept=".lrc"
-                multiple
-                ref={lyricInputRef}
-                onChange={handleLyricFileChange}
+                ref={fileInputRef}
+                onChange={handleFileChange}
                 className="hidden"
             />
             <ul className="space-y-2">

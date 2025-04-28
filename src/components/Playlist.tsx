@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useCallback } from "react";
 import { Track, LyricLine } from "../types";
 import { Button } from "./Button/Button";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -10,14 +10,9 @@ interface PlaylistProps {
     setPlaylist: React.Dispatch<React.SetStateAction<Track[]>>;
     currentTrackIndex: number;
     setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
-    setLyrics: React.Dispatch<React.SetStateAction<LyricLine[]>>;
-    setCurrentLyricIndex: React.Dispatch<React.SetStateAction<number>>;
-    audioRef: React.RefObject<HTMLAudioElement | null>;
-    setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
-    setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
-    setDuration: React.Dispatch<React.SetStateAction<number>>;
     setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
-    playTrack: (track: Track) => Promise<void>;
+    playTrack: (track: Track, index: number) => Promise<void>;
+    resetState: () => void;
 }
 
 const Playlist: React.FC<PlaylistProps> = ({
@@ -25,98 +20,121 @@ const Playlist: React.FC<PlaylistProps> = ({
     setPlaylist,
     currentTrackIndex,
     setCurrentTrackIndex,
-    setLyrics,
-    setCurrentLyricIndex,
-    audioRef,
-    setIsPlaying,
-    setCurrentTime,
-    setDuration,
     setQueue,
     playTrack,
+    resetState,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleAddTrack = () => {
+    const handleAddTrack = useCallback(() => {
         fileInputRef.current?.click();
-    };
+    }, []);
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
+    const fetchLyrics = useCallback(async (lyricsUrl: string): Promise<LyricLine[]> => {
+        try {
+            const response = await fetch(lyricsUrl);
+            const content = await response.text();
+            const lines = content.split("\n");
+            const lyrics: LyricLine[] = [];
+            const timeRegex = /\[(\d{2}):(\d{2})[.:](\d{2,3})\](.*)/;
 
-        const audioFiles: File[] = [];
-        const lyricFiles: File[] = [];
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            if (file.name.endsWith(".lrc")) {
-                lyricFiles.push(file);
-            } else if (file.type.startsWith("audio/")) {
-                audioFiles.push(file);
-            }
-        }
-
-        const newTracks: Track[] = [];
-        for (const audioFile of audioFiles) {
-            const baseName = audioFile.name.replace(/\.[^/.]+$/, "");
-            const lyricFile = lyricFiles.find((lyric) => lyric.name === `${baseName}.lrc`);
-
-            const newTrack: Track = {
-                name: audioFile.name.replace(/\.[^/.]+$/, ""),
-                artist: "Unknown Artist",
-                url: URL.createObjectURL(audioFile),
-                hasLyrics: !!lyricFile,
-                lyricsUrl: lyricFile ? URL.createObjectURL(lyricFile) : undefined,
-                album: "Unknown Album",
-                file: audioFile,
-                codec: audioFile.type,
-            };
-            newTracks.push(newTrack);
-        }
-
-        setPlaylist((prev) => [...prev, ...newTracks]);
-        setQueue((prev) => [...prev, ...newTracks]);
-
-        if (fileInputRef.current) fileInputRef.current.value = "";
-    };
-
-    const handleRemoveTrack = (index: number) => {
-        setPlaylist((prev) => {
-            const newPlaylist = prev.filter((_, i) => i !== index);
-            if (index === currentTrackIndex) {
-                setCurrentTrackIndex(-1);
-                setIsPlaying(false);
-                setCurrentTime(0);
-                setDuration(0);
-                setLyrics([]);
-                setCurrentLyricIndex(-1);
-                if (audioRef.current) {
-                    audioRef.current.src = "";
+            for (const line of lines) {
+                const match = line.match(timeRegex);
+                if (match) {
+                    const minutes = parseInt(match[1]);
+                    const seconds = parseInt(match[2]);
+                    const milliseconds = parseInt(match[3].padEnd(3, "0"));
+                    const time = minutes * 60 + seconds + milliseconds / 1000;
+                    const text = match[4].trim();
+                    if (text) lyrics.push({ time, text });
                 }
             }
-            return newPlaylist;
-        });
-        setQueue((prev) => {
-            const newQueue = prev.filter((_, i) => i !== index);
-            if (
-                index <= currentTrackIndex &&
-                currentTrackIndex >= 0 &&
-                currentTrackIndex < prev.length
-            ) {
-                const currentTrack = prev[currentTrackIndex];
-                const newIndex = newQueue.findIndex((track) => track.url === currentTrack.url);
-                setCurrentTrackIndex(newIndex);
+            return lyrics;
+        } catch (err) {
+            console.error("Failed to load lyrics:", err);
+            return [];
+        }
+    }, []);
+
+    const handleFileChange = useCallback(
+        async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+
+            const audioFiles: File[] = [];
+            const lyricFiles: File[] = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.name.endsWith(".lrc")) {
+                    lyricFiles.push(file);
+                } else if (file.type.startsWith("audio/")) {
+                    audioFiles.push(file);
+                }
             }
-            return newQueue;
-        });
-    };
 
-    const handlePlayTrack = async (index: number) => {
-        setCurrentTrackIndex(index);
-        setCurrentLyricIndex(-1);
+            const newTracks: Track[] = [];
+            for (const audioFile of audioFiles) {
+                const baseName = audioFile.name.replace(/\.[^/.]+$/, "");
+                const lyricFile = lyricFiles.find((lyric) => lyric.name === `${baseName}.lrc`);
+                const lyricsUrl = lyricFile ? URL.createObjectURL(lyricFile) : undefined;
+                const lyrics = lyricsUrl ? await fetchLyrics(lyricsUrl) : [];
 
-        const track = playlist[index];
-        await playTrack(track);
-    };
+                const newTrack: Track = {
+                    name: audioFile.name.replace(/\.[^/.]+$/, ""),
+                    artist: "Unknown Artist",
+                    url: URL.createObjectURL(audioFile),
+                    hasLyrics: !!lyricFile,
+                    lyricsUrl,
+                    lyrics,
+                    currentLyricIndex: -1,
+                    album: "Unknown Album",
+                    file: audioFile,
+                    codec: audioFile.type,
+                };
+                newTracks.push(newTrack);
+            }
+
+            setPlaylist((prev) => [...prev, ...newTracks]);
+            setQueue((prev) => [...prev, ...newTracks]);
+
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        },
+        [fetchLyrics, setPlaylist, setQueue]
+    );
+
+    const handleRemoveTrack = useCallback(
+        (index: number) => {
+            setPlaylist((prev) => {
+                const newPlaylist = prev.filter((_, i) => i !== index);
+                if (index === currentTrackIndex) {
+                    resetState();
+                }
+                return newPlaylist;
+            });
+            setQueue((prev) => {
+                const newQueue = prev.filter((_, i) => i !== index);
+                if (
+                    index <= currentTrackIndex &&
+                    currentTrackIndex >= 0 &&
+                    currentTrackIndex < prev.length
+                ) {
+                    const currentTrack = prev[currentTrackIndex];
+                    const newIndex = newQueue.findIndex((track) => track.url === currentTrack.url);
+                    setCurrentTrackIndex(newIndex);
+                }
+                return newQueue;
+            });
+        },
+        [currentTrackIndex, resetState, setCurrentTrackIndex, setPlaylist, setQueue]
+    );
+
+    const handlePlayTrack = useCallback(
+        async (index: number) => {
+            const track = playlist[index];
+            await playTrack(track, index);
+        },
+        [playTrack, playlist]
+    );
 
     return (
         <div className="bg-[var(--bg-primary)] p-4 rounded-lg shadow-md">
@@ -177,4 +195,4 @@ const Playlist: React.FC<PlaylistProps> = ({
     );
 };
 
-export default Playlist;
+export default React.memo(Playlist);

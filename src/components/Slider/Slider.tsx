@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import "./Slider.css";
 import { HTMLProps } from "../../types";
 import { cn } from "../../lib/utils";
@@ -66,7 +66,9 @@ export class SliderRef {
     private _max: number = 100;
     private _step: number = 1;
 
+    // @ts-expect-error
     private _changeEvent: SliderRefEvent = null;
+    // @ts-expect-error
     private _inputEvent: SliderRefEvent = null;
 
     private _elementUpdater: ElementUpdaterCallback[] = [];
@@ -100,15 +102,17 @@ const updateValue = (
     slider: HTMLDivElement | null,
     value: number,
     min: number,
-    maxRange: number,
-    precision: number
+    maxRange: {
+        range: number;
+        precision: number;
+    }
 ) => {
     const range = value - min;
-    const progress = range / maxRange;
+    const progress = range / maxRange.range;
 
     slider?.parentElement?.style.setProperty(
         "--xellanix-slider-progress",
-        progress.toFixed(precision)
+        progress.toFixed(maxRange.precision)
     );
 };
 
@@ -196,23 +200,21 @@ export default function Slider({
     const sliderRef = useRef<HTMLDivElement>(null);
     const thumbRef = useRef<HTMLDivElement>(null);
 
-    const dataRef = useRef({ min: min, max: max, step: step });
-    const maxRange = useMemo(() => Math.max(max - min, 0), [max, min]);
-    const maxRangePrecision = useMemo(
-        () => Math.ceil(Math.log10(maxRange)),
-        [maxRange]
-    );
+    const dataRef = useRef({ min: min, max: max, step: step, value: defaultValue });
+    const maxRangeRef = useRef({ range: 0, precision: 0 });
 
     useEffect(() => {
         updateValue(
             sliderRef.current,
             Math.max(Math.min(defaultValue, max), min),
             min,
-            maxRange,
-            maxRangePrecision
+            maxRangeRef.current
         );
 
-        dataRef.current = { min: min, max: max, step: step };
+        dataRef.current = { min: min, max: max, step: step, value: defaultValue };
+
+        const range = Math.max(max - min, 0);
+        maxRangeRef.current = { range: range, precision: Math.ceil(Math.log10(range)) };
 
         sliderInputRef?.current?.init(min, max, step, defaultValue);
         sliderInputRef?.current?.sync();
@@ -284,21 +286,18 @@ export default function Slider({
         };
 
         const handleKeyDown = (event: KeyboardEvent) => {
+            const _step = dataRef.current.step;
+            if (currentValue !== dataRef.current.value) currentValue = dataRef.current.value;
+            
             if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
-                if (currentValue - step < dataRef.current.min) return;
-                currentValue -= step;
+                if (currentValue - _step < dataRef.current.min) return;
+                currentValue -= _step;
             } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
-                if (currentValue + step > dataRef.current.max) return;
-                currentValue += step;
+                if (currentValue + _step > dataRef.current.max) return;
+                currentValue += _step;
             } else return;
 
-            updateValue(
-                sliderRef.current,
-                currentValue,
-                dataRef.current.min,
-                maxRange,
-                maxRangePrecision
-            );
+            updateValue(sliderRef.current, currentValue, dataRef.current.min, maxRangeRef.current);
             setNewValue(currentValue);
         };
 
@@ -328,8 +327,7 @@ export default function Slider({
                 sliderRef.current,
                 Math.max(Math.min(event, dataRef.current.max), dataRef.current.min),
                 dataRef.current.min,
-                maxRange,
-                maxRangePrecision
+                maxRangeRef.current
             );
 
             setNewValue(event);

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Track, LyricLine } from "../types";
+import React, { useState, useCallback } from "react";
+import { Track } from "../types";
 import Slider, { SliderInput, useSlider } from "./Slider/Slider";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -17,24 +17,22 @@ import { Button } from "./Button/Button";
 
 interface AudioPlayerProps {
     audioRef: React.RefObject<HTMLAudioElement | null>;
-    playlist: Track[];
     queue: Track[];
     currentTrackIndex: number;
+    setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
     isPlaying: boolean;
     setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
     currentTime: number;
     setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
     duration: number;
     setDuration: React.Dispatch<React.SetStateAction<number>>;
-    setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
-    setLyrics: React.Dispatch<React.SetStateAction<LyricLine[]>>;
-    setCurrentLyricIndex: React.Dispatch<React.SetStateAction<number>>;
     shuffle: boolean;
     loop: "none" | "track" | "playlist";
     toggleShuffle: () => void;
     toggleLoop: () => void;
     isIslandExpanded: boolean;
-    playTrack: (track: Track) => Promise<void>;
+    playTrack: (track: Track, index: number) => Promise<void>;
+    resetState: () => void;
 }
 
 const formatTime = (seconds: number): string => {
@@ -47,26 +45,25 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     audioRef,
     queue,
     currentTrackIndex,
+    setCurrentTrackIndex,
     isPlaying,
     setIsPlaying,
     currentTime,
     setCurrentTime,
     duration,
     setDuration,
-    setCurrentTrackIndex,
-    setLyrics,
-    setCurrentLyricIndex,
     shuffle,
     loop,
     toggleShuffle,
     toggleLoop,
-    ...props
+    playTrack,
+    resetState,
 }) => {
     const [volume, setVolume] = useState<number>(100);
     const scaleSliderInputRef = useSlider();
     const volumeSliderInputRef = useSlider();
 
-    const togglePlay = () => {
+    const togglePlay = useCallback(() => {
         if (audioRef.current && currentTrackIndex >= 0) {
             if (isPlaying) {
                 audioRef.current.pause();
@@ -79,86 +76,85 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 setIsPlaying(true);
             }
         }
-    };
+    }, [audioRef, currentTrackIndex, isPlaying, setIsPlaying]);
 
-    const handleTimeUpdate = () => {
+    const handleTimeUpdate = useCallback(() => {
         if (audioRef.current) {
             setCurrentTime(audioRef.current.currentTime);
             setDuration(audioRef.current.duration || 0);
         }
-    };
+    }, [audioRef, setCurrentTime, setDuration]);
 
-    const handleSeek = (newTime: number) => {
-        setCurrentTime(newTime);
-        if (audioRef.current) {
-            audioRef.current.currentTime = newTime;
+    const handleSeek = useCallback(
+        (newTime: number) => {
+            setCurrentTime(newTime);
+            if (audioRef.current) {
+                audioRef.current.currentTime = newTime;
+            }
+        },
+        [audioRef, setCurrentTime]
+    );
+
+    const handleVolumeChange = useCallback(
+        (newVolume: number) => {
+            const clampedVolume = Math.max(0, Math.min(100, newVolume));
+            setVolume(clampedVolume);
+            if (audioRef.current) {
+                audioRef.current.volume = clampedVolume / 100;
+            }
+        },
+        [audioRef]
+    );
+
+    const playPrevious = useCallback(() => {
+        if (currentTrackIndex > 0) {
+            const newIndex = currentTrackIndex - 1;
+            setCurrentTrackIndex(newIndex);
+            const track = queue[newIndex];
+            playTrack(track, newIndex);
+        } else if (loop === "playlist" && queue.length > 0) {
+            const newIndex = queue.length - 1;
+            setCurrentTrackIndex(newIndex);
+            const track = queue[newIndex];
+            playTrack(track, newIndex);
         }
-    };
+    }, [currentTrackIndex, loop, queue, playTrack, setCurrentTrackIndex]);
 
-    const handleVolumeChange = (newVolume: number) => {
-        const clampedVolume = Math.max(0, Math.min(100, newVolume));
-        setVolume(clampedVolume);
-        if (audioRef.current) {
-            audioRef.current.volume = clampedVolume / 100;
+    const playNext = useCallback(() => {
+        if (currentTrackIndex + 1 < queue.length) {
+            const newIndex = currentTrackIndex + 1;
+            setCurrentTrackIndex(newIndex);
+            const track = queue[newIndex];
+            playTrack(track, newIndex);
+        } else if (loop === "playlist" && queue.length > 0) {
+            const newIndex = 0;
+            setCurrentTrackIndex(newIndex);
+            const track = queue[newIndex];
+            playTrack(track, newIndex);
+        } else {
+            resetState();
         }
-    };
+    }, [currentTrackIndex, loop, queue, playTrack, resetState, setCurrentTrackIndex]);
 
-    const playTrack = async (index: number) => {
-        if (index < 0 || index >= queue.length || !audioRef.current) {
-            setIsPlaying(false);
-            setCurrentTrackIndex(-1);
-            setCurrentTime(0);
-            setLyrics([]);
-            setCurrentLyricIndex(-1);
+    const handleEnded = useCallback(async () => {
+        let newIndex: number;
+
+        if (loop === "track" && currentTrackIndex >= 0) {
+            newIndex = currentTrackIndex;
+        } else if (currentTrackIndex + 1 < queue.length) {
+            newIndex = currentTrackIndex + 1;
+        } else if (loop === "playlist" && queue.length > 0) {
+            newIndex = 0;
+        } else {
+            resetState();
             return;
         }
 
-        setCurrentTrackIndex(index);
-        setCurrentTime(0);
-        // Do not reset lyrics here; let Playlist.tsx handle it
-        setCurrentLyricIndex(-1);
-        
-        const track = queue[index];
-        await props.playTrack(track);
-    };
+        setCurrentTrackIndex(newIndex);
 
-    const playPrevious = () => {
-        if (currentTrackIndex > 0) {
-            playTrack(currentTrackIndex - 1);
-        } else if (loop === "playlist" && queue.length > 0) {
-            playTrack(queue.length - 1);
-        }
-    };
-
-    const playNext = () => {
-        if (currentTrackIndex + 1 < queue.length) {
-            playTrack(currentTrackIndex + 1);
-        } else if (loop === "playlist" && queue.length > 0) {
-            playTrack(0);
-        } else {
-            setIsPlaying(false);
-            setCurrentTrackIndex(-1);
-            setCurrentTime(0);
-            setLyrics([]);
-            setCurrentLyricIndex(-1);
-        }
-    };
-
-    const handleEnded = async () => {
-        if (loop === "track" && currentTrackIndex >= 0) {
-            await playTrack(currentTrackIndex);
-        } else if (currentTrackIndex + 1 < queue.length) {
-            await playTrack(currentTrackIndex + 1);
-        } else if (loop === "playlist" && queue.length > 0) {
-            await playTrack(0);
-        } else {
-            setIsPlaying(false);
-            setCurrentTrackIndex(-1);
-            setCurrentTime(0);
-            setLyrics([]);
-            setCurrentLyricIndex(-1);
-        }
-    };
+        const track = queue[newIndex];
+        await playTrack(track, newIndex);
+    }, [currentTrackIndex, loop, queue, playTrack, resetState, setCurrentTrackIndex]);
 
     const isTrackSelected = currentTrackIndex >= 0 && currentTrackIndex < queue.length;
     const canPlayPrevious = currentTrackIndex > 0 || (loop === "playlist" && queue.length > 0);
@@ -167,18 +163,16 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
     return (
         <div
-            className={`group relative bg-[var(--bg-tertiary)] shadow-md w-40 h-4 rounded-2xl overflow-hidden transition-[width,height,background] duration-700 ease-in-out hover:w-[90vw] hover:md:w-[800px] hover:h-48 hover:md:h-24 hover:bg-[var(--bg-primary)] left-1/2 transform -translate-x-1/2`}
+            className={`group relative bg-[var(--bg-tertiary)] shadow-md w-40 h-4 rounded-2xl overflow-hidden transition-[width,height,background] duration-700 ease-in-out hover:w-[calc(100vw-theme(spacing.4)*2)] hover:h-48 hover:md:h-24 hover:bg-[var(--bg-primary)] left-1/2 transform -translate-x-1/2`}
             style={{ transformOrigin: "center bottom" }}>
             <audio
                 ref={audioRef}
-                src={isTrackSelected ? queue[currentTrackIndex]?.url : undefined}
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={handleEnded}
                 onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
             />
             <div
                 className={`opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out w-full h-full p-4 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-none group-hover:pointer-events-auto`}>
-                {/* Left: Song Info */}
                 <div className="flex items-center gap-3 flex-1 min-w-0 h-full">
                     <div
                         className="w-12 h-12 rounded-xl shrink-0"
@@ -199,8 +193,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                     </div>
                 </div>
 
-                {/* Center: Controls and Progress */}
-                <div className="flex flex-col items-center gap-3 w-full max-w-xs h-full justify-center">
+                <div className="flex flex-col items-center gap-3 w-[40%] max-w-xs h-full justify-center">
                     <div className="flex gap-2 justify-center">
                         <Button
                             styleType="primary"
@@ -261,7 +254,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                         </span>
                         <Slider
                             sliderInputRef={scaleSliderInputRef}
-                            className="flex-1 max-w-[150px]"
+                            className="flex-1 max-w-[225px]"
                             min={0}
                             max={duration || 100}
                             defaultValue={currentTime}
@@ -274,8 +267,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                     </div>
                 </div>
 
-                {/* Right: Volume */}
-                <div className="flex items-center gap-2 flex-1 justify-end min-w-0 h-full">
+                <div className="flex items-center gap-2 flex-1 justify-end min-w-0 h-full not-md:w-full not-md:max-w-56">
                     <Button
                         styleType="secondary"
                         onClick={() => {
@@ -293,7 +285,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                     </Button>
                     <Slider
                         sliderInputRef={volumeSliderInputRef}
-                        className="flex-1"
+                        className="flex-1 max-w-32"
                         min={0}
                         max={100}
                         defaultValue={volume}
@@ -316,4 +308,4 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     );
 };
 
-export default AudioPlayer;
+export default React.memo(AudioPlayer);

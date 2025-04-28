@@ -1,28 +1,20 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { Track } from "../types";
 
 interface QueueProps {
     queue: Track[];
     currentTrackIndex: number;
-    setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
-    setCurrentLyricIndex: React.Dispatch<React.SetStateAction<number>>;
-    playTrack: (track: Track) => Promise<void>;
+    playTrack: (track: Track, index: number) => Promise<void>;
 }
 
-const Queue: React.FC<QueueProps> = ({
-    queue,
-    currentTrackIndex,
-    setCurrentTrackIndex,
-    setCurrentLyricIndex,
-    playTrack
-}) => {
-    const changeTrack = async (index: number) => {
-        setCurrentTrackIndex(index);
-        setCurrentLyricIndex(-1);
-
-        const track = queue[index];
-        await playTrack(track);
-    };
+const Queue: React.FC<QueueProps> = ({ queue, currentTrackIndex, playTrack }) => {
+    const changeTrack = useCallback(
+        async (index: number) => {
+            const track = queue[index];
+            await playTrack(track, index);
+        },
+        [queue, playTrack]
+    );
 
     return (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
@@ -53,4 +45,4 @@ const Queue: React.FC<QueueProps> = ({
     );
 };
 
-export default Queue;
+export default React.memo(Queue);

@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import AudioPlayer from "./components/AudioPlayer";
 import LyricsDisplay from "./components/LyricsDisplay";
 import Playlist from "./components/Playlist";
 import Queue from "./components/Queue";
-import { Track, LyricLine } from "./types";
+import { Track } from "./types";
 import { Button } from "./components/Button/Button";
 
 const App: React.FC = () => {
@@ -13,8 +13,6 @@ const App: React.FC = () => {
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [currentTime, setCurrentTime] = useState<number>(0);
     const [duration, setDuration] = useState<number>(0);
-    const [lyrics, setLyrics] = useState<LyricLine[]>([]);
-    const [currentLyricIndex, setCurrentLyricIndex] = useState<number>(-1);
     const [darkMode, setDarkMode] = useState<boolean>(true);
     const [showLyrics, setShowLyrics] = useState<boolean>(true);
     const [viewMode, setViewMode] = useState<"playlist" | "queue">("playlist");
@@ -23,52 +21,76 @@ const App: React.FC = () => {
     const [isIslandExpanded, setIsIslandExpanded] = useState<boolean>(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const lyricsRef = useRef<HTMLDivElement | null>(null);
+    const shuffleSignatureRef = useRef<string>("");
 
-    // Custom scroll function to center lyric within panel
-    const scrollIntoPanel = (element: HTMLElement, index: number, totalLyrics: number) => {
-        if (!lyricsRef.current) return;
+    const scrollIntoPanel = useCallback(
+        (element: HTMLElement, index: number, totalLyrics: number) => {
+            if (!lyricsRef.current) return;
 
-        const panel = lyricsRef.current;
-        const panelRect = panel.getBoundingClientRect();
-        const elementRect = element.getBoundingClientRect();
-        const panelHeight = panelRect.height;
-        const elementHeight = elementRect.height;
+            const panel = lyricsRef.current;
+            const panelRect = panel.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+            const panelHeight = panelRect.height;
+            const elementHeight = elementRect.height;
 
-        let scrollTop = element.offsetTop - panel.offsetTop - (panelHeight - elementHeight) / 2;
+            let scrollTop = element.offsetTop - panel.offsetTop - (panelHeight - elementHeight) / 2;
 
-        if (index === 0) {
-            scrollTop = 0;
-        } else if (index === totalLyrics - 1) {
-            scrollTop = panel.scrollHeight - panelHeight;
-        }
-
-        panel.scrollTo({ top: scrollTop, behavior: "smooth" });
-    };
-
-    // Sync lyrics with current time
-    useEffect(() => {
-        if (lyrics.length && currentTime) {
-            const index = lyrics.findIndex((lyric, i) => {
-                const nextTime = lyrics[i + 1]?.time || Infinity;
-                return currentTime >= lyric.time && currentTime < nextTime;
-            });
-            if (index !== currentLyricIndex) {
-                setCurrentLyricIndex(index);
-                if (lyricsRef.current && index >= 0) {
-                    const lyricElement = lyricsRef.current.children[index] as HTMLElement;
-                    scrollIntoPanel(lyricElement, index, lyrics.length);
-                }
+            if (index === 0) {
+                scrollTop = 0;
+            } else if (index === totalLyrics - 1) {
+                scrollTop = panel.scrollHeight - panelHeight;
             }
-        } else if (lyricsRef.current && (currentTime === 0 || !lyrics.length)) {
-            lyricsRef.current.scrollTop = 0;
-        }
-    }, [currentTime, lyrics, currentLyricIndex, currentTrackIndex]);
 
-    // Update queue when playlist or shuffle changes
+            panel.scrollTo({ top: scrollTop, behavior: "smooth" });
+        },
+        []
+    );
+
     useEffect(() => {
+        if (!audioRef.current || currentTrackIndex < 0 || currentTrackIndex >= queue.length) {
+            if (lyricsRef.current) lyricsRef.current.scrollTop = 0;
+            return;
+        }
+
+        const track = queue[currentTrackIndex];
+        if (!track?.lyrics?.length || !currentTime) {
+            if (lyricsRef.current) lyricsRef.current.scrollTop = 0;
+            return;
+        }
+
+        const index = track.lyrics.findIndex((lyric, i) => {
+            const nextTime = track.lyrics[i + 1]?.time || Infinity;
+            return currentTime >= lyric.time && currentTime < nextTime;
+        });
+
+        if (index !== track.currentLyricIndex) {
+            setQueue((prevQueue) => {
+                const newQueue = [...prevQueue];
+                newQueue[currentTrackIndex] = {
+                    ...newQueue[currentTrackIndex],
+                    currentLyricIndex: index,
+                };
+                return newQueue;
+            });
+
+            if (lyricsRef.current && index >= 0) {
+                const lyricElement = lyricsRef.current.children[index] as HTMLElement;
+                scrollIntoPanel(lyricElement, index, track.lyrics.length);
+            }
+        }
+    }, [currentTime, currentTrackIndex, queue, scrollIntoPanel]);
+
+    useEffect(() => {
+        const newSignature = `${shuffle}:${playlist.map((track) => track.url).join(",")}`;
+
+        if (newSignature === shuffleSignatureRef.current) {
+            return;
+        }
+
+        shuffleSignatureRef.current = newSignature;
+
         if (shuffle) {
             const shuffled = [...playlist].sort(() => Math.random() - 0.5);
-            // Preserve the current track's position if it exists
             if (currentTrackIndex >= 0 && currentTrackIndex < queue.length) {
                 const currentTrack = queue[currentTrackIndex];
                 const newQueue = shuffled.filter((track) => track.url !== currentTrack.url);
@@ -80,66 +102,65 @@ const App: React.FC = () => {
         } else {
             setQueue([...playlist]);
         }
-    }, [playlist, shuffle]);
+    }, [playlist, shuffle, currentTrackIndex]);
 
-    const toggleDarkMode = () => {
-        setDarkMode(!darkMode);
-        document.documentElement.classList.toggle("dark");
-    };
+    const toggleDarkMode = useCallback(() => {
+        setDarkMode((prev) => {
+            const newMode = !prev;
+            document.documentElement.classList.toggle("dark", newMode);
+            return newMode;
+        });
+    }, []);
 
-    const toggleLyrics = () => setShowLyrics(!showLyrics);
-    const toggleShuffle = () => setShuffle(!shuffle);
+    const toggleLyrics = useCallback(() => setShowLyrics((prev) => !prev), []);
+    const toggleShuffle = useCallback(() => setShuffle((prev) => !prev), []);
 
-    const toggleLoop = () => {
+    const toggleLoop = useCallback(() => {
         setLoop((prev) => {
             if (prev === "none") return "track";
             if (prev === "track") return "playlist";
             return "none";
         });
-    };
+    }, []);
 
-    const playTrack = async (track: Track) => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.src = track.url;
-            try {
-                await audioRef.current.load();
-                await audioRef.current.play();
-                setIsPlaying(true);
-            } catch (err) {
-                console.error("Playback error:", err);
+    const playTrack = useCallback(
+        async (track: Track, index: number) => {
+            if (index < 0 || index >= queue.length || !audioRef.current) {
                 setIsPlaying(false);
+                setCurrentTrackIndex(-1);
+                setCurrentTime(0);
+                return;
             }
-        }
-        
-        if (track.hasLyrics && track.lyricsUrl) {
-            try {
-                const response = await fetch(track.lyricsUrl);
-                const content = await response.text();
-                const lines = content.split("\n");
-                const lyrics: LyricLine[] = [];
-                const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
 
-                for (const line of lines) {
-                    const match = line.match(timeRegex);
-                    if (match) {
-                        const minutes = parseInt(match[1]);
-                        const seconds = parseInt(match[2]);
-                        const milliseconds = parseInt(match[3].padEnd(3, "0"));
-                        const time = minutes * 60 + seconds + milliseconds / 1000;
-                        const text = match[4].trim();
-                        if (text) lyrics.push({ time, text });
-                    }
+            setCurrentTrackIndex(index);
+            setCurrentTime(0);
+
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.src = "";
+                audioRef.current.currentTime = 0;
+                audioRef.current.src = track.url;
+                try {
+                    await audioRef.current.load();
+                    await audioRef.current.play();
+                    setIsPlaying(true);
+                } catch (err) {
+                    console.error("Playback error:", err);
+                    setIsPlaying(false);
                 }
-                setLyrics(lyrics);
-            } catch (err) {
-                console.error("Failed to load lyrics:", err);
-                setLyrics([]);
             }
-        } else {
-            setLyrics([]);
+        },
+        [queue]
+    );
+
+    const resetState = useCallback(() => {
+        setIsPlaying(false);
+        setCurrentTrackIndex(-1);
+        setCurrentTime(0);
+        if (audioRef.current) {
+            audioRef.current.src = "";
         }
-    };
+    }, []);
 
     return (
         <div className="container mx-auto p-4 max-w-4xl bg-gray-100 dark:bg-gray-900 min-h-screen relative">
@@ -162,8 +183,16 @@ const App: React.FC = () => {
             </div>
             {showLyrics && (
                 <LyricsDisplay
-                    lyrics={lyrics}
-                    currentLyricIndex={currentLyricIndex}
+                    lyrics={
+                        currentTrackIndex >= 0 && currentTrackIndex < queue.length
+                            ? queue[currentTrackIndex]?.lyrics || []
+                            : []
+                    }
+                    currentLyricIndex={
+                        currentTrackIndex >= 0 && currentTrackIndex < queue.length
+                            ? queue[currentTrackIndex]?.currentLyricIndex || -1
+                            : -1
+                    }
                     lyricsRef={lyricsRef}
                     audioRef={audioRef}
                     setCurrentTime={setCurrentTime}
@@ -187,23 +216,12 @@ const App: React.FC = () => {
                     setPlaylist={setPlaylist}
                     currentTrackIndex={currentTrackIndex}
                     setCurrentTrackIndex={setCurrentTrackIndex}
-                    setLyrics={setLyrics}
-                    setCurrentLyricIndex={setCurrentLyricIndex}
-                    audioRef={audioRef}
-                    setIsPlaying={setIsPlaying}
-                    setCurrentTime={setCurrentTime}
-                    setDuration={setDuration}
                     setQueue={setQueue}
                     playTrack={playTrack}
+                    resetState={resetState}
                 />
             ) : (
-                <Queue
-                    queue={queue}
-                    currentTrackIndex={currentTrackIndex}
-                    setCurrentTrackIndex={setCurrentTrackIndex}
-                    setCurrentLyricIndex={setCurrentLyricIndex}
-                    playTrack={playTrack}
-                />
+                <Queue queue={queue} currentTrackIndex={currentTrackIndex} playTrack={playTrack} />
             )}
             <div
                 className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-40"
@@ -211,24 +229,22 @@ const App: React.FC = () => {
                 onMouseLeave={() => setIsIslandExpanded(false)}>
                 <AudioPlayer
                     audioRef={audioRef}
-                    playlist={playlist}
                     queue={queue}
                     currentTrackIndex={currentTrackIndex}
+                    setCurrentTrackIndex={setCurrentTrackIndex} // Added prop
                     isPlaying={isPlaying}
                     setIsPlaying={setIsPlaying}
                     currentTime={currentTime}
                     setCurrentTime={setCurrentTime}
                     duration={duration}
                     setDuration={setDuration}
-                    setCurrentTrackIndex={setCurrentTrackIndex}
-                    setLyrics={setLyrics}
-                    setCurrentLyricIndex={setCurrentLyricIndex}
                     shuffle={shuffle}
                     loop={loop}
                     toggleShuffle={toggleShuffle}
                     toggleLoop={toggleLoop}
                     isIslandExpanded={isIslandExpanded}
                     playTrack={playTrack}
+                    resetState={resetState}
                 />
             </div>
         </div>

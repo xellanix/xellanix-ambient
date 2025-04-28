@@ -17,10 +17,4 @@ export default defineConfig({
 	css: {
 		postcss: "./postcss.config.mjs",
 	},
-	preprocessorOptions: {
-		css: {
-			extract: true,
-			codeSplit: true,
-		},
-	},
 });

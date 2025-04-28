@@ -3,7 +3,6 @@ import { Track, LyricLine } from "../types";
 import Slider, { SliderInput, useSlider } from "./Slider/Slider";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-    MuteIcon,
     NextIcon,
     PauseIcon,
     PlayIcon,
@@ -12,7 +11,6 @@ import {
     RepeatOne01Icon,
     ShuffleIcon,
     VolumeHighIcon,
-    VolumeMute02Icon,
     VolumeOffIcon,
 } from "@hugeicons-pro/core-solid-rounded";
 import { Button } from "./Button/Button";
@@ -134,21 +132,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
         setCurrentTrackIndex(index);
         setCurrentTime(0);
-        setLyrics([]);
+        // Do not reset lyrics here; let Playlist.tsx handle it
         setCurrentLyricIndex(-1);
 
         const track = queue[index];
-        if (track.hasLyrics && track.lyricsUrl) {
-            try {
-                const response = await fetch(track.lyricsUrl);
-                const content = await response.text();
-                setLyrics(parseLrc(content));
-            } catch (err) {
-                console.error("Failed to load lyrics:", err);
-                setLyrics([]);
-            }
-        }
-
         audioRef.current.src = track.url;
         try {
             await audioRef.current.load();

@@ -68,7 +68,15 @@ const App: React.FC = () => {
     useEffect(() => {
         if (shuffle) {
             const shuffled = [...playlist].sort(() => Math.random() - 0.5);
-            setQueue(shuffled);
+            // Preserve the current track's position if it exists
+            if (currentTrackIndex >= 0 && currentTrackIndex < queue.length) {
+                const currentTrack = queue[currentTrackIndex];
+                const newQueue = shuffled.filter((track) => track.url !== currentTrack.url);
+                newQueue.splice(currentTrackIndex, 0, currentTrack);
+                setQueue(newQueue);
+            } else {
+                setQueue(shuffled);
+            }
         } else {
             setQueue([...playlist]);
         }
@@ -93,6 +101,42 @@ const App: React.FC = () => {
             if (prev === "track") return "playlist";
             return "none";
         });
+    };
+
+    // Define playTrack to pass to Playlist
+    const playTrack = async (index: number) => {
+        if (index < 0 || index >= queue.length || !audioRef.current) {
+            setIsPlaying(false);
+            setCurrentTrackIndex(-1);
+            setCurrentTime(0);
+            setLyrics([]);
+            setCurrentLyricIndex(-1);
+            return;
+        }
+
+        setCurrentTrackIndex(index);
+        setCurrentTime(0);
+        setCurrentLyricIndex(-1);
+
+        const track = queue[index];
+        audioRef.current.src = track.url;
+        try {
+            await audioRef.current.load();
+            await audioRef.current.play();
+            setIsPlaying(true);
+        } catch (err) {
+            console.error("Playback error:", err);
+            setIsPlaying(false);
+            setTimeout(async () => {
+                try {
+                    await audioRef.current?.play();
+                    setIsPlaying(true);
+                } catch (retryErr) {
+                    console.error("Retry playback error:", retryErr);
+                    setIsPlaying(false);
+                }
+            }, 100);
+        }
     };
 
     return (
@@ -148,6 +192,7 @@ const App: React.FC = () => {
                     setCurrentTime={setCurrentTime}
                     setDuration={setDuration}
                     setQueue={setQueue}
+                    playTrack={playTrack}
                 />
             ) : (
                 <Queue

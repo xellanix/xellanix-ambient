@@ -17,6 +17,7 @@ interface PlaylistProps {
     setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
     setDuration: React.Dispatch<React.SetStateAction<number>>;
     setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
+    playTrack: (index: number) => Promise<void>; // Add this prop
 }
 
 const Playlist: React.FC<PlaylistProps> = ({
@@ -31,6 +32,7 @@ const Playlist: React.FC<PlaylistProps> = ({
     setCurrentTime,
     setDuration,
     setQueue,
+    playTrack,
 }) => {
     const audioInputRef = useRef<HTMLInputElement>(null);
     const lyricInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +82,7 @@ const Playlist: React.FC<PlaylistProps> = ({
 
     const handleRemoveTrack = (index: number) => {
         setPlaylist((prev) => {
+            const removedTrack = prev[index];
             const newPlaylist = prev.filter((_, i) => i !== index);
             if (index === currentTrackIndex) {
                 setCurrentTrackIndex(-1);
@@ -91,61 +94,29 @@ const Playlist: React.FC<PlaylistProps> = ({
                 if (audioRef.current) {
                     audioRef.current.src = "";
                 }
-            } else if (index < currentTrackIndex) {
-                setCurrentTrackIndex((prevIndex) => prevIndex - 1);
             }
+            // Remove the index adjustment logic
             return newPlaylist;
         });
-        setQueue((prev) => prev.filter((_, i) => i !== index));
+        setQueue((prev) => {
+            const removedTrack = prev[index];
+            const newQueue = prev.filter((_, i) => i !== index);
+            // Adjust currentTrackIndex by finding the same track in the new queue
+            if (
+                index <= currentTrackIndex &&
+                currentTrackIndex >= 0 &&
+                currentTrackIndex < prev.length
+            ) {
+                const currentTrack = prev[currentTrackIndex];
+                const newIndex = newQueue.findIndex((track) => track.url === currentTrack.url);
+                setCurrentTrackIndex(newIndex);
+            }
+            return newQueue;
+        });
     };
 
-    const handlePlayTrack = (index: number) => {
-        setCurrentTrackIndex(index);
-        setCurrentTime(0);
-        setLyrics([]);
-        setCurrentLyricIndex(-1);
-
-        const track = playlist[index];
-        if (audioRef.current) {
-            audioRef.current.src = track.url;
-            audioRef.current
-                .play()
-                .then(() => {
-                    setIsPlaying(true);
-                    setDuration(audioRef.current?.duration || 0);
-                })
-                .catch((err) => {
-                    console.error("Playback error:", err);
-                    setIsPlaying(false);
-                });
-        }
-
-        if (track.hasLyrics && track.lyricsUrl) {
-            fetch(track.lyricsUrl)
-                .then((response) => response.text())
-                .then((content) => {
-                    const parsedLyrics: LyricLine[] = content
-                        .split("\n")
-                        .map((line) => {
-                            const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/);
-                            if (match) {
-                                const minutes = parseInt(match[1]);
-                                const seconds = parseInt(match[2]);
-                                const milliseconds = parseInt(match[3].padEnd(3, "0"));
-                                const time = minutes * 60 + seconds + milliseconds / 1000;
-                                const text = match[4].trim();
-                                return text ? { time, text } : null;
-                            }
-                            return null;
-                        })
-                        .filter((line): line is LyricLine => line !== null);
-                    setLyrics(parsedLyrics);
-                })
-                .catch((err) => {
-                    console.error("Failed to load lyrics:", err);
-                    setLyrics([]);
-                });
-        }
+    const handlePlayTrack = async (index: number) => {
+        await playTrack(index); // Delegate to AudioPlayer's playTrack
     };
 
     return (

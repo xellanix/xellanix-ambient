@@ -1,76 +1,27 @@
 import React from "react";
-import { Track, LyricLine } from "../types";
+import { Track } from "../types";
 
 interface QueueProps {
     queue: Track[];
     currentTrackIndex: number;
     setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
-    setLyrics: React.Dispatch<React.SetStateAction<LyricLine[]>>;
     setCurrentLyricIndex: React.Dispatch<React.SetStateAction<number>>;
-    audioRef: React.RefObject<HTMLAudioElement | null>;
-    setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
-    setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
-    setDuration: React.Dispatch<React.SetStateAction<number>>;
+    playTrack: (track: Track) => Promise<void>;
 }
 
 const Queue: React.FC<QueueProps> = ({
     queue,
     currentTrackIndex,
     setCurrentTrackIndex,
-    setLyrics,
     setCurrentLyricIndex,
-    audioRef,
-    setIsPlaying,
-    setCurrentTime,
-    setDuration,
+    playTrack
 }) => {
     const changeTrack = async (index: number) => {
         setCurrentTrackIndex(index);
         setCurrentLyricIndex(-1);
 
         const track = queue[index];
-
-        // Load lyrics if available
-        if (track.hasLyrics && track.lyricsUrl) {
-            try {
-                const response = await fetch(track.lyricsUrl);
-                const content = await response.text();
-                const lines = content.split("\n");
-                const lyrics: LyricLine[] = [];
-                const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
-
-                for (const line of lines) {
-                    const match = line.match(timeRegex);
-                    if (match) {
-                        const minutes = parseInt(match[1]);
-                        const seconds = parseInt(match[2]);
-                        const milliseconds = parseInt(match[3].padEnd(3, "0"));
-                        const time = minutes * 60 + seconds + milliseconds / 1000;
-                        const text = match[4].trim();
-                        if (text) lyrics.push({ time, text });
-                    }
-                }
-                setLyrics(lyrics);
-            } catch (err) {
-                console.error("Failed to load lyrics:", err);
-                setLyrics([]);
-            }
-        } else {
-            setLyrics([]);
-        }
-
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.src = track.url;
-            try {
-                await audioRef.current.load();
-                await audioRef.current.play();
-                setIsPlaying(true);
-            } catch (err) {
-                console.error("Playback error:", err);
-                setIsPlaying(false);
-            }
-        }
+        await playTrack(track);
     };
 
     return (

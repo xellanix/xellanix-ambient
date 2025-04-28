@@ -103,39 +103,46 @@ const App: React.FC = () => {
         });
     };
 
-    // Define playTrack to pass to Playlist
-    const playTrack = async (index: number) => {
-        if (index < 0 || index >= queue.length || !audioRef.current) {
-            setIsPlaying(false);
-            setCurrentTrackIndex(-1);
-            setCurrentTime(0);
+    const playTrack = async (track: Track) => {
+        if (track.hasLyrics && track.lyricsUrl) {
+            try {
+                const response = await fetch(track.lyricsUrl);
+                const content = await response.text();
+                const lines = content.split("\n");
+                const lyrics: LyricLine[] = [];
+                const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+
+                for (const line of lines) {
+                    const match = line.match(timeRegex);
+                    if (match) {
+                        const minutes = parseInt(match[1]);
+                        const seconds = parseInt(match[2]);
+                        const milliseconds = parseInt(match[3].padEnd(3, "0"));
+                        const time = minutes * 60 + seconds + milliseconds / 1000;
+                        const text = match[4].trim();
+                        if (text) lyrics.push({ time, text });
+                    }
+                }
+                setLyrics(lyrics);
+            } catch (err) {
+                console.error("Failed to load lyrics:", err);
+                setLyrics([]);
+            }
+        } else {
             setLyrics([]);
-            setCurrentLyricIndex(-1);
-            return;
         }
 
-        setCurrentTrackIndex(index);
-        setCurrentTime(0);
-        setCurrentLyricIndex(-1);
-
-        const track = queue[index];
-        audioRef.current.src = track.url;
-        try {
-            await audioRef.current.load();
-            await audioRef.current.play();
-            setIsPlaying(true);
-        } catch (err) {
-            console.error("Playback error:", err);
-            setIsPlaying(false);
-            setTimeout(async () => {
-                try {
-                    await audioRef.current?.play();
-                    setIsPlaying(true);
-                } catch (retryErr) {
-                    console.error("Retry playback error:", retryErr);
-                    setIsPlaying(false);
-                }
-            }, 100);
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = track.url;
+            try {
+                await audioRef.current.load();
+                await audioRef.current.play();
+                setIsPlaying(true);
+            } catch (err) {
+                console.error("Playback error:", err);
+                setIsPlaying(false);
+            }
         }
     };
 
@@ -199,12 +206,8 @@ const App: React.FC = () => {
                     queue={queue}
                     currentTrackIndex={currentTrackIndex}
                     setCurrentTrackIndex={setCurrentTrackIndex}
-                    setLyrics={setLyrics}
                     setCurrentLyricIndex={setCurrentLyricIndex}
-                    audioRef={audioRef}
-                    setIsPlaying={setIsPlaying}
-                    setCurrentTime={setCurrentTime}
-                    setDuration={setDuration}
+                    playTrack={playTrack}
                 />
             )}
             <div

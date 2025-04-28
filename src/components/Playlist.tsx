@@ -17,7 +17,7 @@ interface PlaylistProps {
     setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
     setDuration: React.Dispatch<React.SetStateAction<number>>;
     setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
-    playTrack: (index: number) => Promise<void>;
+    playTrack: (track: Track) => Promise<void>;
 }
 
 const Playlist: React.FC<PlaylistProps> = ({
@@ -44,7 +44,6 @@ const Playlist: React.FC<PlaylistProps> = ({
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
-        // Separate audio and lyric files
         const audioFiles: File[] = [];
         const lyricFiles: File[] = [];
         for (let i = 0; i < files.length; i++) {
@@ -58,7 +57,6 @@ const Playlist: React.FC<PlaylistProps> = ({
 
         const newTracks: Track[] = [];
         for (const audioFile of audioFiles) {
-            // Find matching lyric file by name (e.g., "song.mp3" matches "song.lrc")
             const baseName = audioFile.name.replace(/\.[^/.]+$/, "");
             const lyricFile = lyricFiles.find((lyric) => lyric.name === `${baseName}.lrc`);
 
@@ -83,7 +81,6 @@ const Playlist: React.FC<PlaylistProps> = ({
 
     const handleRemoveTrack = (index: number) => {
         setPlaylist((prev) => {
-            const removedTrack = prev[index];
             const newPlaylist = prev.filter((_, i) => i !== index);
             if (index === currentTrackIndex) {
                 setCurrentTrackIndex(-1);
@@ -99,7 +96,6 @@ const Playlist: React.FC<PlaylistProps> = ({
             return newPlaylist;
         });
         setQueue((prev) => {
-            const removedTrack = prev[index];
             const newQueue = prev.filter((_, i) => i !== index);
             if (
                 index <= currentTrackIndex &&
@@ -116,55 +112,10 @@ const Playlist: React.FC<PlaylistProps> = ({
 
     const handlePlayTrack = async (index: number) => {
         setCurrentTrackIndex(index);
-        setCurrentTime(0);
-        setLyrics([]);
         setCurrentLyricIndex(-1);
 
         const track = playlist[index];
-        console.log(
-            "Playing track:",
-            track.name,
-            "Has lyrics:",
-            track.hasLyrics,
-            "Lyrics URL:",
-            track.lyricsUrl
-        );
-
-        if (track.hasLyrics && track.lyricsUrl) {
-            try {
-                const response = await fetch(track.lyricsUrl);
-                const content = await response.text();
-                console.log("Raw lyrics content:", content);
-
-                const parsedLyrics: LyricLine[] = content
-                    .split("\n")
-                    .map((line) => {
-                        const match = line.match(/\[(\d{2}):(\d{2})[.:](\d{2,3})\](.*)/);
-                        if (match) {
-                            const minutes = parseInt(match[1]);
-                            const seconds = parseInt(match[2]);
-                            const milliseconds = parseInt(match[3].padEnd(3, "0"));
-                            const time = minutes * 60 + seconds + milliseconds / 1000;
-                            const text = match[4].trim();
-                            console.log("Parsed lyric line:", { time, text });
-                            return text ? { time, text } : null;
-                        }
-                        return null;
-                    })
-                    .filter((line): line is LyricLine => line !== null);
-
-                console.log("Parsed lyrics:", parsedLyrics);
-                setLyrics(parsedLyrics);
-            } catch (err) {
-                console.error("Failed to load lyrics:", err);
-                setLyrics([]);
-            }
-        } else {
-            console.log("No lyrics available for this track.");
-            setLyrics([]);
-        }
-
-        await playTrack(index);
+        await playTrack(track);
     };
 
     return (

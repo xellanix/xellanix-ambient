@@ -14,6 +14,7 @@ export default defineConfig({
 			},
 		}),
 	],
+	base: "",
 	css: {
 		postcss: "./postcss.config.mjs",
 	},

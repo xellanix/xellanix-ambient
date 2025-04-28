@@ -87,13 +87,8 @@ const App: React.FC = () => {
         document.documentElement.classList.toggle("dark");
     };
 
-    const toggleLyrics = () => {
-        setShowLyrics(!showLyrics);
-    };
-
-    const toggleShuffle = () => {
-        setShuffle(!shuffle);
-    };
+    const toggleLyrics = () => setShowLyrics(!showLyrics);
+    const toggleShuffle = () => setShuffle(!shuffle);
 
     const toggleLoop = () => {
         setLoop((prev) => {
@@ -104,6 +99,19 @@ const App: React.FC = () => {
     };
 
     const playTrack = async (track: Track) => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = track.url;
+            try {
+                await audioRef.current.load();
+                await audioRef.current.play();
+                setIsPlaying(true);
+            } catch (err) {
+                console.error("Playback error:", err);
+                setIsPlaying(false);
+            }
+        }
+        
         if (track.hasLyrics && track.lyricsUrl) {
             try {
                 const response = await fetch(track.lyricsUrl);
@@ -130,19 +138,6 @@ const App: React.FC = () => {
             }
         } else {
             setLyrics([]);
-        }
-
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.src = track.url;
-            try {
-                await audioRef.current.load();
-                await audioRef.current.play();
-                setIsPlaying(true);
-            } catch (err) {
-                console.error("Playback error:", err);
-                setIsPlaying(false);
-            }
         }
     };
 
@@ -233,6 +228,7 @@ const App: React.FC = () => {
                     toggleShuffle={toggleShuffle}
                     toggleLoop={toggleLoop}
                     isIslandExpanded={isIslandExpanded}
+                    playTrack={playTrack}
                 />
             </div>
         </div>

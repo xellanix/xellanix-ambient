@@ -34,6 +34,7 @@ interface AudioPlayerProps {
     toggleShuffle: () => void;
     toggleLoop: () => void;
     isIslandExpanded: boolean;
+    playTrack: (track: Track) => Promise<void>;
 }
 
 const formatTime = (seconds: number): string => {
@@ -59,6 +60,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     loop,
     toggleShuffle,
     toggleLoop,
+    ...props
 }) => {
     const [volume, setVolume] = useState<number>(100);
     const scaleSliderInputRef = useSlider();
@@ -115,26 +117,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         setCurrentTime(0);
         // Do not reset lyrics here; let Playlist.tsx handle it
         setCurrentLyricIndex(-1);
-
+        
         const track = queue[index];
-        audioRef.current.src = track.url;
-        try {
-            await audioRef.current.load();
-            await audioRef.current.play();
-            setIsPlaying(true);
-        } catch (err) {
-            console.error("Playback error:", err);
-            setIsPlaying(false);
-            setTimeout(async () => {
-                try {
-                    await audioRef.current?.play();
-                    setIsPlaying(true);
-                } catch (retryErr) {
-                    console.error("Retry playback error:", retryErr);
-                    setIsPlaying(false);
-                }
-            }, 100);
-        }
+        await props.playTrack(track);
     };
 
     const playPrevious = () => {

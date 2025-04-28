@@ -282,7 +282,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                             onClick={toggleShuffle}
                             className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                             title={shuffle ? "Disable Shuffle" : "Enable Shuffle"}>
-                            <HugeiconsIcon icon={ShuffleIcon} className="size-3" strokeWidth={0} />
+                            <HugeiconsIcon icon={ShuffleIcon} className="size-3" strokeWidth={1} />
                         </Button>
                         <Button
                             styleType={loop !== "none" ? "accent" : "primary"}
@@ -298,7 +298,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                             <HugeiconsIcon
                                 icon={loop === "track" ? RepeatOne01Icon : RepeatIcon}
                                 className="size-3"
-                                strokeWidth={0}
+                                strokeWidth={1}
                             />
                         </Button>
                     </div>

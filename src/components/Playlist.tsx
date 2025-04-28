@@ -1,6 +1,9 @@
 import React, { useRef } from "react";
 import { Track, LyricLine } from "../types";
 import { Button } from "./Button/Button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon } from "@hugeicons-pro/core-solid-rounded";
+import { cn } from "../lib/utils";
 
 interface PlaylistProps {
     playlist: Track[];
@@ -171,11 +174,13 @@ const Playlist: React.FC<PlaylistProps> = ({
                 {playlist.map((track, index) => (
                     <li
                         key={index}
-                        className={`flex justify-between items-center p-2 rounded-lg ${
+                        className={cn(
+                            "flex justify-between items-center p-2 rounded-lg",
                             index === currentTrackIndex
                                 ? "bg-blue-100 dark:bg-blue-900"
-                                : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }`}>
+                                : "hover:bg-gray-100 dark:hover:bg-gray-700",
+                            "hover:[&>.btn]:visible"
+                        )}>
                         <div
                             className="flex-1 cursor-pointer truncate"
                             onClick={() => handlePlayTrack(index)}>
@@ -191,12 +196,18 @@ const Playlist: React.FC<PlaylistProps> = ({
                                 </span>
                             )}
                         </div>
-                        <button
-                            onClick={() => handleRemoveTrack(index)}
-                            className="p-2 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500 transition-colors"
-                            title="Remove Track">
-                            🗑️
-                        </button>
+                        <Button
+                            styleType="secondary"
+                            title="Remove Track"
+                            className="invisible size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
+                            onClick={() => handleRemoveTrack(index)}>
+                            <HugeiconsIcon
+                                icon={Cancel01Icon}
+                                className="size-3"
+                                strokeWidth={1}
+                                color="var(--text-tertiary)"
+                            />
+                        </Button>
                     </li>
                 ))}
             </ul>

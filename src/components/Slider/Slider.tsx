@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import "./Slider.css";
 import { HTMLProps } from "../../types";
 import { cn } from "../../lib/utils";
@@ -100,11 +100,16 @@ const updateValue = (
     slider: HTMLDivElement | null,
     value: number,
     min: number,
-    maxRange: number
+    maxRange: number,
+    precision: number
 ) => {
     const range = value - min;
-    const progress = range * maxRange;
-    slider?.parentElement?.style.setProperty("--xellanix-slider-progress", progress.toString());
+    const progress = range / maxRange;
+
+    slider?.parentElement?.style.setProperty(
+        "--xellanix-slider-progress",
+        progress.toFixed(precision)
+    );
 };
 
 export function SliderInput({
@@ -192,18 +197,22 @@ export default function Slider({
     const thumbRef = useRef<HTMLDivElement>(null);
 
     const dataRef = useRef({ min: min, max: max, step: step });
-    const maxRange = useRef(1 / (max - min));
+    const maxRange = useMemo(() => Math.max(max - min, 0), [max, min]);
+    const maxRangePrecision = useMemo(
+        () => Math.ceil(Math.log10(maxRange)),
+        [maxRange]
+    );
 
     useEffect(() => {
         updateValue(
             sliderRef.current,
             Math.max(Math.min(defaultValue, max), min),
             min,
-            maxRange.current
+            maxRange,
+            maxRangePrecision
         );
 
         dataRef.current = { min: min, max: max, step: step };
-        maxRange.current = 1 / (max - min);
 
         sliderInputRef?.current?.init(min, max, step, defaultValue);
         sliderInputRef?.current?.sync();
@@ -287,7 +296,8 @@ export default function Slider({
                 sliderRef.current,
                 currentValue,
                 dataRef.current.min,
-                maxRange.current
+                maxRange,
+                maxRangePrecision
             );
             setNewValue(currentValue);
         };
@@ -318,7 +328,8 @@ export default function Slider({
                 sliderRef.current,
                 Math.max(Math.min(event, dataRef.current.max), dataRef.current.min),
                 dataRef.current.min,
-                maxRange.current
+                maxRange,
+                maxRangePrecision
             );
 
             setNewValue(event);

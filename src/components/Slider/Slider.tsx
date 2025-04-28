@@ -204,6 +204,9 @@ export default function Slider({
     const maxRangeRef = useRef({ range: 0, precision: 0 });
 
     useEffect(() => {
+        const range = Math.max(max - min, 0);
+        maxRangeRef.current = { range: range, precision: Math.ceil(Math.log10(range)) };
+
         updateValue(
             sliderRef.current,
             Math.max(Math.min(defaultValue, max), min),
@@ -212,9 +215,6 @@ export default function Slider({
         );
 
         dataRef.current = { min: min, max: max, step: step, value: defaultValue };
-
-        const range = Math.max(max - min, 0);
-        maxRangeRef.current = { range: range, precision: Math.ceil(Math.log10(range)) };
 
         sliderInputRef?.current?.init(min, max, step, defaultValue);
         sliderInputRef?.current?.sync();
@@ -288,7 +288,7 @@ export default function Slider({
         const handleKeyDown = (event: KeyboardEvent) => {
             const _step = dataRef.current.step;
             if (currentValue !== dataRef.current.value) currentValue = dataRef.current.value;
-            
+
             if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
                 if (currentValue - _step < dataRef.current.min) return;
                 currentValue -= _step;

@@ -26,7 +26,7 @@
 	@apply [--text-normal:theme(colors.gray.900)];
 	@apply [--text-secondary:theme(colors.gray.600)];
 	@apply [--text-tertiary:theme(colors.gray.400)];
-	
+
 	@apply [--bg-accent:theme(colors.xellanix.600/100%)];
 	@apply [--bg-primary:theme(colors.white)];
 	@apply [--bg-secondary:theme(colors.gray.200)];
@@ -55,8 +55,20 @@
 
 	@apply light-theme-set;
 	@apply dark:dark-theme-set;
+}
 
-	--progress: 0%;
+.audio-player::before {
+	position: absolute;
+	content: "";
+	inset: 0; /* same as { top: 0; right: 0; bottom: 0; left: 0; } */
+	z-index: -1;
+	opacity: 1;
+	transition: opacity 250ms ease-in-out;
+	@apply bg-linear-[90deg,var(--bg-accent)_0%,var(--bg-accent)_var(--audio-player-progress),var(--bg-tertiary)_var(--audio-player-progress),var(--bg-tertiary)_100%];
+}
+
+.audio-player:hover::before {
+	opacity: 0;
 }
 
 .scroll-container {

@@ -10,6 +10,10 @@ interface PlaylistProps {
     setPlaylist: React.Dispatch<React.SetStateAction<Track[]>>;
     currentTrackIndex: number;
     setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
+    audioRef: React.RefObject<HTMLAudioElement | null>;
+    setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
+    setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
+    setDuration: React.Dispatch<React.SetStateAction<number>>;
     setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
     playTrack: (track: Track, index: number) => Promise<void>;
     resetState: () => void;

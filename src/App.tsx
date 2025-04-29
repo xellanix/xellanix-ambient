@@ -10,6 +10,7 @@ const App: React.FC = () => {
     const [playlist, setPlaylist] = useState<Track[]>([]);
     const [queue, setQueue] = useState<Track[]>([]);
     const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(-1);
+    const [currentLyricIndex, setCurrentLyricIndex] = useState<number>(-1); // New state for currentLyricIndex
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [currentTime, setCurrentTime] = useState<number>(0);
     const [duration, setDuration] = useState<number>(0);
@@ -46,14 +47,17 @@ const App: React.FC = () => {
         []
     );
 
+    // Update currentLyricIndex based on currentTime and currentTrackIndex
     useEffect(() => {
-        if (!audioRef.current || currentTrackIndex < 0 || currentTrackIndex >= queue.length) {
+        if (currentTrackIndex < 0 || currentTrackIndex >= queue.length) {
+            setCurrentLyricIndex(-1);
             if (lyricsRef.current) lyricsRef.current.scrollTop = 0;
             return;
         }
 
         const track = queue[currentTrackIndex];
-        if (!track?.lyrics?.length || !currentTime) {
+        if (!track?.lyrics?.length) {
+            setCurrentLyricIndex(-1);
             if (lyricsRef.current) lyricsRef.current.scrollTop = 0;
             return;
         }
@@ -63,22 +67,15 @@ const App: React.FC = () => {
             return currentTime >= lyric.time && currentTime < nextTime;
         });
 
-        if (index !== track.currentLyricIndex) {
-            setQueue((prevQueue) => {
-                const newQueue = [...prevQueue];
-                newQueue[currentTrackIndex] = {
-                    ...newQueue[currentTrackIndex],
-                    currentLyricIndex: index,
-                };
-                return newQueue;
-            });
+        if (index !== currentLyricIndex) {
+            setCurrentLyricIndex(index);
 
             if (lyricsRef.current && index >= 0) {
                 const lyricElement = lyricsRef.current.children[index] as HTMLElement;
                 scrollIntoPanel(lyricElement, index, track.lyrics.length);
             }
         }
-    }, [currentTime, currentTrackIndex, queue, scrollIntoPanel]);
+    }, [currentTime, currentTrackIndex, queue, scrollIntoPanel, currentLyricIndex]);
 
     useEffect(() => {
         const newSignature = `${shuffle}:${playlist.map((track) => track.url).join(",")}`;
@@ -129,11 +126,13 @@ const App: React.FC = () => {
                 setIsPlaying(false);
                 setCurrentTrackIndex(-1);
                 setCurrentTime(0);
+                setCurrentLyricIndex(-1);
                 return;
             }
 
             setCurrentTrackIndex(index);
             setCurrentTime(0);
+            setCurrentLyricIndex(-1); // Reset to trigger highlighting of the first lyric
 
             if (audioRef.current) {
                 audioRef.current.pause();
@@ -157,13 +156,15 @@ const App: React.FC = () => {
         setIsPlaying(false);
         setCurrentTrackIndex(-1);
         setCurrentTime(0);
+        setCurrentLyricIndex(-1);
         if (audioRef.current) {
             audioRef.current.src = "";
         }
     }, []);
 
     return (
-        <div className="container mx-auto p-4 max-w-4xl bg-gray-100 dark:bg-gray-900 min-h-screen relative">
+        <div className="container mx-auto p-4 bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col gap-4">
+            {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-[var(--text-normal)]">Music Player</h1>
                 <div className="flex space-x-3">
@@ -181,48 +182,65 @@ const App: React.FC = () => {
                     </button>
                 </div>
             </div>
-            {showLyrics && (
-                <LyricsDisplay
-                    lyrics={
-                        currentTrackIndex >= 0 && currentTrackIndex < queue.length
-                            ? queue[currentTrackIndex]?.lyrics || []
-                            : []
-                    }
-                    currentLyricIndex={
-                        currentTrackIndex >= 0 && currentTrackIndex < queue.length
-                            ? queue[currentTrackIndex]?.currentLyricIndex || -1
-                            : -1
-                    }
-                    lyricsRef={lyricsRef}
-                    audioRef={audioRef}
-                    setCurrentTime={setCurrentTime}
-                />
-            )}
-            <div className="flex space-x-2 mb-4">
-                <Button
-                    styleType={viewMode === "playlist" ? "accent" : "primary"}
-                    onClick={() => setViewMode("playlist")}>
-                    Playlist
-                </Button>
-                <Button
-                    styleType={viewMode === "queue" ? "accent" : "primary"}
-                    onClick={() => setViewMode("queue")}>
-                    Queue
-                </Button>
+
+            {/* Main Content and Sidebar */}
+            <div className="flex flex-row gap-4 flex-1">
+                {/* Lyrics (Main Content) */}
+                <div className="flex-1">
+                    {showLyrics && (
+                        <LyricsDisplay
+                            lyrics={
+                                currentTrackIndex >= 0 && currentTrackIndex < queue.length
+                                    ? queue[currentTrackIndex]?.lyrics || []
+                                    : []
+                            }
+                            currentLyricIndex={currentLyricIndex}
+                            lyricsRef={lyricsRef}
+                            audioRef={audioRef}
+                            setCurrentTime={setCurrentTime}
+                        />
+                    )}
+                </div>
+
+                {/* Sidebar (Playlist/Queue) */}
+                <div className="w-1/4 min-w-[300px] flex flex-col gap-2">
+                    <div className="flex space-x-2">
+                        <Button
+                            styleType={viewMode === "playlist" ? "accent" : "primary"}
+                            onClick={() => setViewMode("playlist")}>
+                            Playlist
+                        </Button>
+                        <Button
+                            styleType={viewMode === "queue" ? "accent" : "primary"}
+                            onClick={() => setViewMode("queue")}>
+                            Queue
+                        </Button>
+                    </div>
+                    {viewMode === "playlist" ? (
+                        <Playlist
+                            playlist={playlist}
+                            setPlaylist={setPlaylist}
+                            currentTrackIndex={currentTrackIndex}
+                            setCurrentTrackIndex={setCurrentTrackIndex}
+                            audioRef={audioRef}
+                            setIsPlaying={setIsPlaying}
+                            setCurrentTime={setCurrentTime}
+                            setDuration={setDuration}
+                            setQueue={setQueue}
+                            playTrack={playTrack}
+                            resetState={resetState}
+                        />
+                    ) : (
+                        <Queue
+                            queue={queue}
+                            currentTrackIndex={currentTrackIndex}
+                            playTrack={playTrack}
+                        />
+                    )}
+                </div>
             </div>
-            {viewMode === "playlist" ? (
-                <Playlist
-                    playlist={playlist}
-                    setPlaylist={setPlaylist}
-                    currentTrackIndex={currentTrackIndex}
-                    setCurrentTrackIndex={setCurrentTrackIndex}
-                    setQueue={setQueue}
-                    playTrack={playTrack}
-                    resetState={resetState}
-                />
-            ) : (
-                <Queue queue={queue} currentTrackIndex={currentTrackIndex} playTrack={playTrack} />
-            )}
+
+            {/* Audio Player */}
             <div
                 className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-40"
                 onMouseEnter={() => setIsIslandExpanded(true)}
@@ -231,7 +249,7 @@ const App: React.FC = () => {
                     audioRef={audioRef}
                     queue={queue}
                     currentTrackIndex={currentTrackIndex}
-                    setCurrentTrackIndex={setCurrentTrackIndex} // Added prop
+                    setCurrentTrackIndex={setCurrentTrackIndex}
                     isPlaying={isPlaying}
                     setIsPlaying={setIsPlaying}
                     currentTime={currentTime}

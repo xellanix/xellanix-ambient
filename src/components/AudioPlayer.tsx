@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Track } from "../types";
 import Slider, { SliderInput, useSlider } from "./Slider/Slider";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -14,6 +14,7 @@ import {
     VolumeOffIcon,
 } from "@hugeicons-pro/core-solid-rounded";
 import { Button } from "./Button/Button";
+import { cn } from "../lib/utils";
 
 interface AudioPlayerProps {
     audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -156,6 +157,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         await playTrack(track, newIndex);
     }, [currentTrackIndex, loop, queue, playTrack, resetState, setCurrentTrackIndex]);
 
+    useEffect(() => {
+        const root = document.documentElement;
+        let progress = (currentTime / duration) * 100;
+        if (Number.isNaN(progress) || !Number.isFinite(progress)) progress = 0;
+
+        root.style.setProperty("--audio-player-progress", `${progress.toFixed(3)}%`);
+    }, [currentTime, duration]);
+
     const isTrackSelected = currentTrackIndex >= 0 && currentTrackIndex < queue.length;
     const canPlayPrevious = currentTrackIndex > 0 || (loop === "playlist" && queue.length > 0);
     const canPlayNext =
@@ -163,7 +172,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
     return (
         <div
-            className={`group relative bg-[var(--bg-tertiary)] shadow-md w-40 h-4 rounded-2xl overflow-hidden transition-[width,height,background] duration-700 ease-in-out hover:w-[calc(100vw-theme(spacing.4)*2)] hover:h-48 hover:md:h-24 hover:bg-[var(--bg-primary)] left-1/2 transform -translate-x-1/2`}
+            className={cn(
+                `group audio-player relative shadow-md w-40 h-4 rounded-2xl overflow-hidden left-1/2 transform -translate-x-1/2`,
+                'bg-[var(--bg-primary)]',
+                "transition-[width,height,background] duration-700 ease-in-out",
+                "hover:w-[calc(100vw-theme(spacing.4)*2)] hover:h-48 hover:md:h-24",
+            )}
             style={{ transformOrigin: "center bottom" }}>
             <audio
                 ref={audioRef}

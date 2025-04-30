@@ -17,6 +17,7 @@ interface PlaylistProps {
     setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
     playTrack: (track: Track, index: number) => Promise<void>;
     resetState: () => void;
+    className?: string;
 }
 
 const Playlist: React.FC<PlaylistProps> = ({
@@ -27,6 +28,7 @@ const Playlist: React.FC<PlaylistProps> = ({
     setQueue,
     playTrack,
     resetState,
+    className,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -141,60 +143,66 @@ const Playlist: React.FC<PlaylistProps> = ({
     );
 
     return (
-        <div className="bg-[var(--bg-primary)] p-4 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-[var(--text-normal)] mb-4">Playlist</h2>
-            <Button styleType="accent" onClick={handleAddTrack}>
-                Add Track
-            </Button>
-            <input
-                type="file"
-                accept="audio/*,.lrc"
-                multiple
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-            />
-            <ul className="space-y-2">
-                {playlist.map((track, index) => (
-                    <li
-                        key={index}
-                        className={cn(
-                            "flex justify-between items-center p-2 rounded-lg",
-                            index === currentTrackIndex
-                                ? "bg-blue-100 dark:bg-blue-900"
-                                : "hover:bg-gray-100 dark:hover:bg-gray-700",
-                            "hover:[&>.btn]:visible"
-                        )}>
-                        <div
-                            className="flex-1 cursor-pointer truncate"
-                            onClick={() => handlePlayTrack(index)}>
-                            <span className="text-[var(--text-normal)]">{track.name}</span>
-                            {track.artist && (
-                                <span className="text-sm text-[var(--text-secondary)] ml-2">
-                                    - {track.artist}
-                                </span>
-                            )}
-                            {track.codec && (
-                                <span className="text-sm text-[var(--text-tertiary)] ml-2">
-                                    ({track.codec})
-                                </span>
-                            )}
-                        </div>
-                        <Button
-                            styleType="secondary"
-                            title="Remove Track"
-                            className="invisible size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                            onClick={() => handleRemoveTrack(index)}>
-                            <HugeiconsIcon
-                                icon={Cancel01Icon}
-                                className="size-3"
-                                strokeWidth={1}
-                                color="var(--text-tertiary)"
-                            />
-                        </Button>
-                    </li>
-                ))}
-            </ul>
+        <div className={className}>
+            <h2 className="text-lg sm:text-xl font-semibold text-[var(--text-normal)] mb-2 sm:mb-4">
+                Playlist
+            </h2>
+            <div className="mb-2 sm:mb-4">
+                <Button styleType="accent" onClick={handleAddTrack}>
+                    Add Track
+                </Button>
+                <input
+                    type="file"
+                    accept="audio/*,.lrc"
+                    multiple
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                />
+            </div>
+            <div className="flex-1 overflow-auto">
+                <ul className="space-y-1 sm:space-y-2">
+                    {playlist.map((track, index) => (
+                        <li
+                            key={index}
+                            className={cn(
+                                "flex justify-between items-center p-2 rounded-lg",
+                                index === currentTrackIndex
+                                    ? "bg-blue-100 dark:bg-blue-900"
+                                    : "hover:bg-gray-100 dark:hover:bg-gray-700",
+                                "hover:[&>.btn]:visible text-sm sm:text-base"
+                            )}>
+                            <div
+                                className="flex-1 cursor-pointer truncate"
+                                onClick={() => handlePlayTrack(index)}>
+                                <span className="text-[var(--text-normal)]">{track.name}</span>
+                                {track.artist && (
+                                    <span className="text-xs sm:text-sm text-[var(--text-secondary)] ml-1 sm:ml-2">
+                                        - {track.artist}
+                                    </span>
+                                )}
+                                {track.codec && (
+                                    <span className="text-xs sm:text-sm text-[var(--text-tertiary)] ml-1 sm:ml-2">
+                                        ({track.codec})
+                                    </span>
+                                )}
+                            </div>
+                            <Button
+                                styleType="secondary"
+                                title="Remove Track"
+                                className="invisible size-5 sm:size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
+                                onClick={() => handleRemoveTrack(index)}>
+                                <HugeiconsIcon
+                                    icon={Cancel01Icon}
+                                    className="size-2 sm:size-3"
+                                    strokeWidth={1}
+                                    color="var(--text-tertiary)"
+                                />
+                            </Button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
         </div>
     );
 };

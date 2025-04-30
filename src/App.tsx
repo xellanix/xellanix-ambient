@@ -3,14 +3,14 @@ import AudioPlayer from "./components/AudioPlayer";
 import LyricsDisplay from "./components/LyricsDisplay";
 import Playlist from "./components/Playlist";
 import Queue from "./components/Queue";
-import { Track } from "./types";
+import { Track, LyricLine } from "./types";
 import { Button } from "./components/Button/Button";
 
 const App: React.FC = () => {
     const [playlist, setPlaylist] = useState<Track[]>([]);
     const [queue, setQueue] = useState<Track[]>([]);
     const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(-1);
-    const [currentLyricIndex, setCurrentLyricIndex] = useState<number>(-1); // New state for currentLyricIndex
+    const [currentLyricIndex, setCurrentLyricIndex] = useState<number>(-1);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [currentTime, setCurrentTime] = useState<number>(0);
     const [duration, setDuration] = useState<number>(0);
@@ -47,7 +47,6 @@ const App: React.FC = () => {
         []
     );
 
-    // Update currentLyricIndex based on currentTime and currentTrackIndex
     useEffect(() => {
         if (currentTrackIndex < 0 || currentTrackIndex >= queue.length) {
             setCurrentLyricIndex(-1);
@@ -66,6 +65,10 @@ const App: React.FC = () => {
             const nextTime = track.lyrics[i + 1]?.time || Infinity;
             return currentTime >= lyric.time && currentTime < nextTime;
         });
+
+        console.log(
+            `Lyrics sync - currentTime: ${currentTime}, found index: ${index}, currentLyricIndex: ${currentLyricIndex}`
+        );
 
         if (index !== currentLyricIndex) {
             setCurrentLyricIndex(index);
@@ -132,7 +135,7 @@ const App: React.FC = () => {
 
             setCurrentTrackIndex(index);
             setCurrentTime(0);
-            setCurrentLyricIndex(-1); // Reset to trigger highlighting of the first lyric
+            setCurrentLyricIndex(-1);
 
             if (audioRef.current) {
                 audioRef.current.pause();
@@ -163,11 +166,13 @@ const App: React.FC = () => {
     }, []);
 
     return (
-        <div className="container mx-auto p-4 bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col gap-4">
+        <div className="container mx-auto p-2 sm:p-4 bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col gap-2 sm:gap-4 overflow-hidden">
             {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-[var(--text-normal)]">Music Player</h1>
-                <div className="flex space-x-3">
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+                <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-normal)]">
+                    Music Player
+                </h1>
+                <div className="flex space-x-2 sm:space-x-3">
                     <button
                         onClick={toggleLyrics}
                         className="p-2 rounded-full bg-[var(--bg-secondary)] text-gray-800 dark:text-gray-200 hover:bg-[var(--bg-tertiary)] transition-colors"
@@ -184,9 +189,9 @@ const App: React.FC = () => {
             </div>
 
             {/* Main Content and Sidebar */}
-            <div className="flex flex-row gap-4 flex-1">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 max-h-[calc(100dvh-120px)] sm:h-[calc(100dvh-120px)]">
                 {/* Lyrics (Main Content) */}
-                <div className="flex-1">
+                <div className="flex-1 overflow-auto sm:h-full">
                     {showLyrics && (
                         <LyricsDisplay
                             lyrics={
@@ -203,46 +208,73 @@ const App: React.FC = () => {
                 </div>
 
                 {/* Sidebar (Playlist/Queue) */}
-                <div className="w-1/4 min-w-[300px] flex flex-col gap-2">
-                    <div className="flex space-x-2">
-                        <Button
-                            styleType={viewMode === "playlist" ? "accent" : "primary"}
-                            onClick={() => setViewMode("playlist")}>
-                            Playlist
-                        </Button>
-                        <Button
-                            styleType={viewMode === "queue" ? "accent" : "primary"}
-                            onClick={() => setViewMode("queue")}>
-                            Queue
-                        </Button>
+                <div className="w-full sm:w-1/4 sm:min-w-[300px] flex flex-col">
+                    <div className="flex-1 bg-[var(--bg-secondary)] rounded-lg flex flex-col h-full max-h-[50dvh] sm:max-h-full">
+                        {/* Content Area */}
+                        <div className="flex flex-col flex-1 p-2 sm:p-4 h-full max-h-full overflow-hidden">
+                            {viewMode === "playlist" ? (
+                                <Playlist
+                                    playlist={playlist}
+                                    setPlaylist={setPlaylist}
+                                    currentTrackIndex={currentTrackIndex}
+                                    setCurrentTrackIndex={setCurrentTrackIndex}
+                                    audioRef={audioRef}
+                                    setIsPlaying={setIsPlaying}
+                                    setCurrentTime={setCurrentTime}
+                                    setDuration={setDuration}
+                                    setQueue={setQueue}
+                                    playTrack={playTrack}
+                                    resetState={resetState}
+                                    className="!p-0 flex flex-col flex-1 overflow-hidden"
+                                />
+                            ) : (
+                                <Queue
+                                    queue={queue}
+                                    currentTrackIndex={currentTrackIndex}
+                                    playTrack={playTrack}
+                                    className="!p-0 flex flex-col flex-1 overflow-hidden"
+                                />
+                            )}
+                        </div>
+                        {/* Divider */}
+                        <div className="border-t border-[var(--bg-tertiary)] mx-2 sm:mx-4" />
+                        {/* Sliding Puzzle Switcher */}
+                        <div className="relative p-2">
+                            <div className="relative flex">
+                                <div
+                                    className={`absolute top-0 bottom-0 w-1/2 bg-[var(--bg-accent)] rounded transition-transform duration-300 ease-in-out ${
+                                        viewMode === "playlist"
+                                            ? "translate-x-0"
+                                            : "translate-x-full"
+                                    }`}
+                                />
+                                <button
+                                    onClick={() => setViewMode("playlist")}
+                                    className={`flex-1 py-2 px-2 text-sm font-medium text-[var(--text-normal)] z-10 transition-colors duration-300 ${
+                                        viewMode === "playlist"
+                                            ? "text-white"
+                                            : "text-[var(--text-secondary)]"
+                                    }`}>
+                                    Playlist
+                                </button>
+                                <button
+                                    onClick={() => setViewMode("queue")}
+                                    className={`flex-1 py-2 px-2 text-sm font-medium text-[var(--text-normal)] z-10 transition-colors duration-300 ${
+                                        viewMode === "queue"
+                                            ? "text-white"
+                                            : "text-[var(--text-secondary)]"
+                                    }`}>
+                                    Queue
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    {viewMode === "playlist" ? (
-                        <Playlist
-                            playlist={playlist}
-                            setPlaylist={setPlaylist}
-                            currentTrackIndex={currentTrackIndex}
-                            setCurrentTrackIndex={setCurrentTrackIndex}
-                            audioRef={audioRef}
-                            setIsPlaying={setIsPlaying}
-                            setCurrentTime={setCurrentTime}
-                            setDuration={setDuration}
-                            setQueue={setQueue}
-                            playTrack={playTrack}
-                            resetState={resetState}
-                        />
-                    ) : (
-                        <Queue
-                            queue={queue}
-                            currentTrackIndex={currentTrackIndex}
-                            playTrack={playTrack}
-                        />
-                    )}
                 </div>
             </div>
 
             {/* Audio Player */}
             <div
-                className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-40"
+                className="fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 sm:w-40 max-w-[90%] sm:max-w-[400px]"
                 onMouseEnter={() => setIsIslandExpanded(true)}
                 onMouseLeave={() => setIsIslandExpanded(false)}>
                 <AudioPlayer

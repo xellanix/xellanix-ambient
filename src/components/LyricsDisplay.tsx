@@ -25,16 +25,17 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
 
     return (
         <div
-            className="bg-[var(--bg-primary)] p-6 rounded-lg shadow-md mb-6 border border-gray-200 dark:border-gray-700 max-h-64 overflow-y-auto scroll-container"
+            className="p-6 rounded-lg shadow-md flex-1 gap-y-8 flex flex-col overflow-y-auto scroll-container [mask-image:linear-gradient(transparent,black_40%_60%,transparent)]"
             ref={lyricsRef}>
+            <div className="min-h-[40%]" />
             {lyrics.length ? (
                 lyrics.map((lyric, index) => (
                     <p
                         key={index}
-                        className={`text-center py-1 cursor-pointer transition-all duration-300 ${
+                        className={`text-left text-3xl md:text-4xl lg:text-5xl py-1 cursor-pointer transition-all duration-300 ${
                             index === currentLyricIndex
-                                ? "text-blue-600 dark:text-blue-400 text-lg font-bold opacity-100"
-                                : "text-gray-700 dark:text-gray-300 opacity-60 hover:opacity-80"
+                                ? "text-[var(--bg-accent)] font-bold opacity-100"
+                                : "text-[var(--text-secondary)] opacity-20 hover:opacity-60"
                         }`}
                         onClick={() => handleLyricClick(lyric.time)}>
                         {lyric.text}
@@ -43,6 +44,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
             ) : (
                 <p className="text-center text-[var(--text-tertiary)]">No lyrics available</p>
             )}
+            <div className="min-h-[40%]" />
         </div>
     );
 };

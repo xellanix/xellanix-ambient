@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { Track } from "../types";
 import Slider, { SliderInput, useSlider } from "./Slider/Slider";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -157,14 +157,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         await playTrack(track, newIndex);
     }, [currentTrackIndex, loop, queue, playTrack, resetState, setCurrentTrackIndex]);
 
-    useEffect(() => {
-        const root = document.documentElement;
-        let progress = (currentTime / duration) * 100;
-        if (Number.isNaN(progress) || !Number.isFinite(progress)) progress = 0;
-
-        root.style.setProperty("--audio-player-progress", `${progress.toFixed(3)}%`);
-    }, [currentTime, duration]);
-
     const isTrackSelected = currentTrackIndex >= 0 && currentTrackIndex < queue.length;
     const canPlayPrevious = currentTrackIndex > 0 || (loop === "playlist" && queue.length > 0);
     const canPlayNext =
@@ -174,11 +166,22 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <div
             className={cn(
                 `group audio-player relative shadow-md w-40 h-4 rounded-2xl overflow-hidden left-1/2 transform -translate-x-1/2`,
-                'bg-[var(--bg-primary)]',
+                "bg-[var(--bg-tertiary)]",
                 "transition-[width,height,background] duration-700 ease-in-out",
-                "hover:w-[calc(100vw-theme(spacing.4)*2)] hover:h-48 hover:md:h-24",
+                "hover:bg-[var(--bg-primary)] hover:w-[calc(100vw-theme(spacing.4)*2)] hover:h-48 hover:md:h-24"
             )}
             style={{ transformOrigin: "center bottom" }}>
+            <div
+                className={cn(
+                    "absolute inset-0 bg-[var(--bg-accent)] transition-colors -z-50 rounded-2xl",
+                    "group-hover:bg-[var(--bg-primary)] duration-700 ease-in-out"
+                )}
+                style={{
+                    width: `${(Math.max(0, Math.min(currentTime / (duration || 1), 1)) * 100).toFixed(
+                        2
+                    )}%`,
+                }}
+            />
             <audio
                 ref={audioRef}
                 onTimeUpdate={handleTimeUpdate}

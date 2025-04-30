@@ -3,8 +3,7 @@ import AudioPlayer from "./components/AudioPlayer";
 import LyricsDisplay from "./components/LyricsDisplay";
 import Playlist from "./components/Playlist";
 import Queue from "./components/Queue";
-import { Track, LyricLine } from "./types";
-import { Button } from "./components/Button/Button";
+import { Track } from "./types";
 
 const App: React.FC = () => {
     const [playlist, setPlaylist] = useState<Track[]>([]);
@@ -40,6 +39,8 @@ const App: React.FC = () => {
                 scrollTop = 0;
             } else if (index === totalLyrics - 1) {
                 scrollTop = panel.scrollHeight - panelHeight;
+            } else if (index === -1) {
+                scrollTop = 0;
             }
 
             panel.scrollTo({ top: scrollTop, behavior: "smooth" });
@@ -66,15 +67,11 @@ const App: React.FC = () => {
             return currentTime >= lyric.time && currentTime < nextTime;
         });
 
-        console.log(
-            `Lyrics sync - currentTime: ${currentTime}, found index: ${index}, currentLyricIndex: ${currentLyricIndex}`
-        );
-
         if (index !== currentLyricIndex) {
             setCurrentLyricIndex(index);
 
             if (lyricsRef.current && index >= 0) {
-                const lyricElement = lyricsRef.current.children[index] as HTMLElement;
+                const lyricElement = lyricsRef.current.children[index + 1] as HTMLElement;
                 scrollIntoPanel(lyricElement, index, track.lyrics.length);
             }
         }
@@ -136,6 +133,7 @@ const App: React.FC = () => {
             setCurrentTrackIndex(index);
             setCurrentTime(0);
             setCurrentLyricIndex(-1);
+            if (lyricsRef.current) lyricsRef.current.scrollTop = 0;
 
             if (audioRef.current) {
                 audioRef.current.pause();
@@ -168,17 +166,11 @@ const App: React.FC = () => {
     return (
         <div className="container mx-auto p-2 sm:p-4 bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col gap-2 sm:gap-4 overflow-hidden">
             {/* Header */}
-            <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <div className="flex justify-between items-center">
                 <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-normal)]">
-                    Music Player
+                    Xellanix Ambient
                 </h1>
                 <div className="flex space-x-2 sm:space-x-3">
-                    <button
-                        onClick={toggleLyrics}
-                        className="p-2 rounded-full bg-[var(--bg-secondary)] text-gray-800 dark:text-gray-200 hover:bg-[var(--bg-tertiary)] transition-colors"
-                        title={showLyrics ? "Hide Lyrics" : "Show Lyrics"}>
-                        {showLyrics ? "🎵" : "🎵"}
-                    </button>
                     <button
                         onClick={toggleDarkMode}
                         className="p-2 rounded-full bg-[var(--bg-secondary)] text-gray-800 dark:text-gray-200 hover:bg-[var(--bg-tertiary)] transition-colors"
@@ -187,11 +179,11 @@ const App: React.FC = () => {
                     </button>
                 </div>
             </div>
-
+            
             {/* Main Content and Sidebar */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 max-h-[calc(100dvh-120px)] sm:h-[calc(100dvh-120px)]">
+            <div className="flex flex-col sm:flex-row gap-4 sm:h-[calc(100dvh-120px)]">
                 {/* Lyrics (Main Content) */}
-                <div className="flex-1 overflow-auto sm:h-full">
+                <div className="flex flex-col flex-1 overflow-auto sm:h-full max-h-[calc(100dvh-120px)]">
                     {showLyrics && (
                         <LyricsDisplay
                             lyrics={
@@ -209,9 +201,9 @@ const App: React.FC = () => {
 
                 {/* Sidebar (Playlist/Queue) */}
                 <div className="w-full sm:w-1/4 sm:min-w-[300px] flex flex-col">
-                    <div className="flex-1 bg-[var(--bg-secondary)] rounded-lg flex flex-col h-full max-h-[50dvh] sm:max-h-full">
+                    <div className="flex-1 bg-[var(--bg-primary)] rounded-lg flex flex-col h-full max-h-[50dvh] sm:max-h-full">
                         {/* Content Area */}
-                        <div className="flex flex-col flex-1 p-2 sm:p-4 h-full max-h-full overflow-hidden">
+                        <div className="flex flex-col flex-1 p-4 h-full max-h-full overflow-hidden">
                             {viewMode === "playlist" ? (
                                 <Playlist
                                     playlist={playlist}
@@ -237,10 +229,10 @@ const App: React.FC = () => {
                             )}
                         </div>
                         {/* Divider */}
-                        <div className="border-t border-[var(--bg-tertiary)] mx-2 sm:mx-4" />
+                        <div className="border-t border-[var(--bg-tertiary)] mx-4" />
                         {/* Sliding Puzzle Switcher */}
-                        <div className="relative p-2">
-                            <div className="relative flex">
+                        <div className="relative p-4 flex">
+                            <div className="relative flex flex-2">
                                 <div
                                     className={`absolute top-0 bottom-0 w-1/2 bg-[var(--bg-accent)] rounded transition-transform duration-300 ease-in-out ${
                                         viewMode === "playlist"
@@ -267,6 +259,12 @@ const App: React.FC = () => {
                                     Queue
                                 </button>
                             </div>
+                            <button
+                                onClick={toggleLyrics}
+                                className="flex-1 p-2 rounded-full bg-[var(--bg-secondary)] text-gray-800 dark:text-gray-200 hover:bg-[var(--bg-tertiary)] transition-colors"
+                                title={showLyrics ? "Hide Lyrics" : "Show Lyrics"}>
+                                {showLyrics ? "🎵" : "🎵"}
+                            </button>
                         </div>
                     </div>
                 </div>

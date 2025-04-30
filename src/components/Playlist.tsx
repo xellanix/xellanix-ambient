@@ -10,21 +10,21 @@ interface PlaylistProps {
     setPlaylist: React.Dispatch<React.SetStateAction<Track[]>>;
     currentTrackIndex: number;
     setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
-    audioRef: React.RefObject<HTMLAudioElement | null>;
-    setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
-    setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
-    setDuration: React.Dispatch<React.SetStateAction<number>>;
+    queue: Track[];
     setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
     playTrack: (track: Track, index: number) => Promise<void>;
     resetState: () => void;
     className?: string;
 }
 
+let playlistId = 0;
+
 const Playlist: React.FC<PlaylistProps> = ({
     playlist,
     setPlaylist,
     currentTrackIndex,
     setCurrentTrackIndex,
+    queue,
     setQueue,
     playTrack,
     resetState,
@@ -86,6 +86,7 @@ const Playlist: React.FC<PlaylistProps> = ({
                 const lyrics = lyricsUrl ? await fetchLyrics(lyricsUrl) : [];
 
                 const newTrack: Track = {
+                    id: playlistId++,
                     name: audioFile.name.replace(/\.[^/.]+$/, ""),
                     artist: "Unknown Artist",
                     url: URL.createObjectURL(audioFile),
@@ -125,8 +126,10 @@ const Playlist: React.FC<PlaylistProps> = ({
                     currentTrackIndex < prev.length
                 ) {
                     const currentTrack = prev[currentTrackIndex];
-                    const newIndex = newQueue.findIndex((track) => track.url === currentTrack.url);
+                    const newIndex = newQueue.findIndex((track) => track.id === currentTrack.id);
                     setCurrentTrackIndex(newIndex);
+
+                    console.log(newIndex)
                 }
                 return newQueue;
             });
@@ -137,9 +140,10 @@ const Playlist: React.FC<PlaylistProps> = ({
     const handlePlayTrack = useCallback(
         async (index: number) => {
             const track = playlist[index];
-            await playTrack(track, index);
+            const queueIndex = queue.findIndex((t) => t.id === track.id);
+            await playTrack(track, queueIndex);
         },
-        [playTrack, playlist]
+        [playTrack, playlist, queue]
     );
 
     return (
@@ -167,7 +171,7 @@ const Playlist: React.FC<PlaylistProps> = ({
                             key={index}
                             className={cn(
                                 "flex justify-between items-center p-2 rounded-lg",
-                                index === currentTrackIndex
+                                track.id === queue[currentTrackIndex]?.id
                                     ? "bg-blue-100 dark:bg-blue-900"
                                     : "hover:bg-gray-100 dark:hover:bg-gray-700",
                                 "hover:[&>.btn]:visible text-sm sm:text-base"

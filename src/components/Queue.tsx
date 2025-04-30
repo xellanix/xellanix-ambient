@@ -17,12 +17,31 @@ const Queue: React.FC<QueueProps> = ({ queue, currentTrackIndex, playTrack, clas
         [queue, playTrack]
     );
 
+    const scrollToCurrentTrack = useCallback(
+        (panel: HTMLDivElement) => {
+            if (!panel) return;
+
+            const element = panel.children[0].children[currentTrackIndex] as HTMLElement;
+            let scrollTop = element.offsetTop - panel.offsetTop;
+
+            if (currentTrackIndex <= 0) {
+                scrollTop = 0;
+            } else if (currentTrackIndex === queue.length - 1) {
+                const panelHeight = panel.getBoundingClientRect().height;
+                scrollTop = panel.scrollHeight - panelHeight;
+            }
+
+            panel.scrollTo({ top: scrollTop, behavior: "smooth" });
+        },
+        [currentTrackIndex, queue]
+    );
+
     return (
         <div className={className}>
             <h2 className="text-lg sm:text-xl font-semibold text-[var(--text-normal)] mb-2 sm:mb-4">
                 Queue
             </h2>
-            <div className="flex-1 overflow-auto">
+            <div ref={scrollToCurrentTrack} className="flex-1 overflow-auto">
                 <ul className="space-y-1 sm:space-y-2">
                     {queue.map((track, index) => (
                         <li

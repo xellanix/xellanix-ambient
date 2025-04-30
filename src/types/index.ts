@@ -4,6 +4,7 @@ export interface LyricLine {
 }
 
 export interface Track {
+	id: number;
 	name: string;
 	artist: string;
 	url: string;

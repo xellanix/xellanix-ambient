@@ -35,12 +35,10 @@ const App: React.FC = () => {
 
             let scrollTop = element.offsetTop - panel.offsetTop - (panelHeight - elementHeight) / 2;
 
-            if (index === 0) {
+            if (index <= 0) {
                 scrollTop = 0;
             } else if (index === totalLyrics - 1) {
                 scrollTop = panel.scrollHeight - panelHeight;
-            } else if (index === -1) {
-                scrollTop = 0;
             }
 
             panel.scrollTo({ top: scrollTop, behavior: "smooth" });
@@ -179,7 +177,7 @@ const App: React.FC = () => {
                     </button>
                 </div>
             </div>
-            
+
             {/* Main Content and Sidebar */}
             <div className="flex flex-col sm:flex-row gap-4 sm:h-[calc(100dvh-120px)]">
                 {/* Lyrics (Main Content) */}
@@ -210,10 +208,7 @@ const App: React.FC = () => {
                                     setPlaylist={setPlaylist}
                                     currentTrackIndex={currentTrackIndex}
                                     setCurrentTrackIndex={setCurrentTrackIndex}
-                                    audioRef={audioRef}
-                                    setIsPlaying={setIsPlaying}
-                                    setCurrentTime={setCurrentTime}
-                                    setDuration={setDuration}
+                                    queue={queue}
                                     setQueue={setQueue}
                                     playTrack={playTrack}
                                     resetState={resetState}

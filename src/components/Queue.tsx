@@ -1,14 +1,16 @@
 import React, { useCallback } from "react";
 import { Track } from "../types";
+import { useCurrentTrack } from "../hooks/useCurrentTrack";
 
 interface QueueProps {
     queue: Track[];
-    currentTrackIndex: number;
     playTrack: (track: Track, index: number) => Promise<void>;
     className?: string;
 }
 
-const Queue: React.FC<QueueProps> = ({ queue, currentTrackIndex, playTrack, className }) => {
+const Queue: React.FC<QueueProps> = ({ queue, playTrack, className }) => {
+    const { current } = useCurrentTrack();
+
     const changeTrack = useCallback(
         async (index: number) => {
             const track = queue[index];
@@ -21,19 +23,21 @@ const Queue: React.FC<QueueProps> = ({ queue, currentTrackIndex, playTrack, clas
         (panel: HTMLDivElement) => {
             if (!panel) return;
 
-            const element = panel.children[0].children[currentTrackIndex] as HTMLElement;
+            const element = panel.children[0].children[current] as HTMLElement;
+            if (!element) return;
+
             let scrollTop = element.offsetTop - panel.offsetTop;
 
-            if (currentTrackIndex <= 0) {
+            if (current <= 0) {
                 scrollTop = 0;
-            } else if (currentTrackIndex === queue.length - 1) {
+            } else if (current === queue.length - 1) {
                 const panelHeight = panel.getBoundingClientRect().height;
                 scrollTop = panel.scrollHeight - panelHeight;
             }
 
             panel.scrollTo({ top: scrollTop, behavior: "smooth" });
         },
-        [currentTrackIndex, queue]
+        [current, queue]
     );
 
     return (
@@ -47,7 +51,7 @@ const Queue: React.FC<QueueProps> = ({ queue, currentTrackIndex, playTrack, clas
                         <li
                             key={index}
                             className={`flex items-center justify-between p-2 cursor-pointer rounded-md transition-colors ${
-                                index === currentTrackIndex
+                                index === current
                                     ? "bg-gray-200 dark:bg-gray-600"
                                     : "hover:bg-gray-100 dark:hover:bg-gray-700"
                             } text-sm sm:text-base`}

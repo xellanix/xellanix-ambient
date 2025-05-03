@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import { LyricLine } from "../types";
 
 interface LyricsDisplayProps {
@@ -23,19 +23,49 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
         }
     };
 
+    const scrollIntoPanel = useCallback(
+        (element: HTMLElement, index: number, totalLyrics: number) => {
+            if (!lyricsRef.current) return;
+
+            const panel = lyricsRef.current;
+            const panelRect = panel.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+            const panelHeight = panelRect.height;
+            const elementHeight = elementRect.height;
+
+            let scrollTop = element.offsetTop - panel.offsetTop - (panelHeight - elementHeight) / 2;
+
+            if (index <= 0) {
+                scrollTop = 0;
+            } else if (index === totalLyrics - 1) {
+                scrollTop = panel.scrollHeight - panelHeight;
+            }
+
+            panel.scrollTo({ top: scrollTop, behavior: "smooth" });
+        },
+        []
+    );
+
+    useEffect(() => {
+        if (lyricsRef.current && currentLyricIndex >= 0) {
+            const lyricElement = lyricsRef.current.children[currentLyricIndex + 1] as HTMLElement;
+            scrollIntoPanel(lyricElement, currentLyricIndex, lyrics.length);
+        }
+    }, [currentLyricIndex]);
+
     return (
         <div
-            className="p-6 rounded-lg shadow-md flex-1 gap-y-8 flex flex-col overflow-y-auto scroll-container [mask-image:linear-gradient(transparent,black_40%_60%,transparent)]"
+            className="p-6 rounded-lg shadow-md flex-1 gap-y-8 flex flex-col overflow-y-auto scroll-container no-scrollbar [mask-image:linear-gradient(transparent,black_40%_60%,transparent)]"
             ref={lyricsRef}>
             <div className="min-h-[40%]" />
             {lyrics.length ? (
                 lyrics.map((lyric, index) => (
                     <p
                         key={index}
-                        className={`text-left text-3xl md:text-4xl lg:text-5xl py-1 cursor-pointer transition-all duration-300 ${
+                        className={`font-lyrics text-left text-3xl font-bold md:text-4xl lg:text-5xl py-1 cursor-pointer transition-all duration-300 ${
                             index === currentLyricIndex
-                                ? "text-[var(--bg-accent)] font-bold opacity-100"
-                                : "text-[var(--text-secondary)] opacity-20 hover:opacity-60"
+                                ? "text-[var(--bg-accent)] opacity-100"
+                                : "text-[var(--text-secondary)] opacity-10 hover:opacity-40"
                         }`}
                         onClick={() => handleLyricClick(lyric.time)}>
                         {lyric.text}

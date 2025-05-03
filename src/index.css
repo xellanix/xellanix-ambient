@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=Gabarito:wght@400..900&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -17,6 +18,7 @@
 	--spacing-8xl/2: max(calc((100dvw - 90rem) / 2), 0px);
 
 	--font-sans: "Figtree", sans-serif;
+	--font-lyrics: "Gabarito", sans-serif;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -45,8 +47,12 @@
 	@apply [--bg-tertiary:theme(colors.gray.600)];
 }
 
+@utility no-scrollbar {
+	@apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+}
+
 :root {
-	font-family: Figtree, sans-serif;
+	@apply font-sans;
 
 	font-synthesis: none;
 	text-rendering: optimizeLegibility;

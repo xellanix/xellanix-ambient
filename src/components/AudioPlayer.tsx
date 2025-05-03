@@ -15,12 +15,11 @@ import {
 } from "@hugeicons-pro/core-solid-rounded";
 import { Button } from "./Button/Button";
 import { cn } from "../lib/utils";
+import { useCurrentTrack } from "../hooks/useCurrentTrack";
 
 interface AudioPlayerProps {
     audioRef: React.RefObject<HTMLAudioElement | null>;
     queue: Track[];
-    currentTrackIndex: number;
-    setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
     isPlaying: boolean;
     setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
     currentTime: number;
@@ -45,8 +44,6 @@ const formatTime = (seconds: number): string => {
 const AudioPlayer: React.FC<AudioPlayerProps> = ({
     audioRef,
     queue,
-    currentTrackIndex,
-    setCurrentTrackIndex,
     isPlaying,
     setIsPlaying,
     currentTime,
@@ -60,12 +57,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     playTrack,
     resetState,
 }) => {
+    const { current, dispatch } = useCurrentTrack();
+
     const [volume, setVolume] = useState<number>(100);
     const scaleSliderInputRef = useSlider();
     const volumeSliderInputRef = useSlider();
 
     const togglePlay = useCallback(() => {
-        if (audioRef.current && currentTrackIndex >= 0) {
+        if (audioRef.current && current >= 0) {
             if (isPlaying) {
                 audioRef.current.pause();
                 setIsPlaying(false);
@@ -77,7 +76,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 setIsPlaying(true);
             }
         }
-    }, [audioRef, currentTrackIndex, isPlaying, setIsPlaying]);
+    }, [audioRef, current, isPlaying, setIsPlaying]);
 
     const handleTimeUpdate = useCallback(() => {
         if (audioRef.current) {
@@ -107,60 +106,34 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         [audioRef]
     );
 
-    const playPrevious = useCallback(() => {
-        if (currentTrackIndex > 0) {
-            const newIndex = currentTrackIndex - 1;
-            setCurrentTrackIndex(newIndex);
+    const handlePlay = useCallback(
+        async (newIndex: number) => {
+            dispatch(newIndex);
             const track = queue[newIndex];
-            playTrack(track, newIndex);
-        } else if (loop === "playlist" && queue.length > 0) {
-            const newIndex = queue.length - 1;
-            setCurrentTrackIndex(newIndex);
-            const track = queue[newIndex];
-            playTrack(track, newIndex);
-        }
-    }, [currentTrackIndex, loop, queue, playTrack, setCurrentTrackIndex]);
+            await playTrack(track, newIndex);
+        },
+        [dispatch, queue, playTrack]
+    );
 
-    const playNext = useCallback(() => {
-        if (currentTrackIndex + 1 < queue.length) {
-            const newIndex = currentTrackIndex + 1;
-            setCurrentTrackIndex(newIndex);
-            const track = queue[newIndex];
-            playTrack(track, newIndex);
-        } else if (loop === "playlist" && queue.length > 0) {
-            const newIndex = 0;
-            setCurrentTrackIndex(newIndex);
-            const track = queue[newIndex];
-            playTrack(track, newIndex);
-        } else {
-            resetState();
-        }
-    }, [currentTrackIndex, loop, queue, playTrack, resetState, setCurrentTrackIndex]);
+    const playPrevious = useCallback(async () => {
+        if (current > 0) await handlePlay(current - 1);
+        else if (loop === "playlist" && queue.length > 0) await handlePlay(queue.length - 1);
+    }, [current, loop, queue, handlePlay]);
+
+    const playNext = useCallback(async () => {
+        if (current + 1 < queue.length) await handlePlay(current + 1);
+        else if (loop === "playlist" && queue.length > 0) await handlePlay(0);
+        else resetState();
+    }, [current, loop, queue, handlePlay, resetState]);
 
     const handleEnded = useCallback(async () => {
-        let newIndex: number;
+        if (loop === "track" && current >= 0) await handlePlay(current);
+        else await playNext();
+    }, [current, loop, handlePlay]);
 
-        if (loop === "track" && currentTrackIndex >= 0) {
-            newIndex = currentTrackIndex;
-        } else if (currentTrackIndex + 1 < queue.length) {
-            newIndex = currentTrackIndex + 1;
-        } else if (loop === "playlist" && queue.length > 0) {
-            newIndex = 0;
-        } else {
-            resetState();
-            return;
-        }
-
-        setCurrentTrackIndex(newIndex);
-
-        const track = queue[newIndex];
-        await playTrack(track, newIndex);
-    }, [currentTrackIndex, loop, queue, playTrack, resetState, setCurrentTrackIndex]);
-
-    const isTrackSelected = currentTrackIndex >= 0 && currentTrackIndex < queue.length;
-    const canPlayPrevious = currentTrackIndex > 0 || (loop === "playlist" && queue.length > 0);
-    const canPlayNext =
-        currentTrackIndex + 1 < queue.length || (loop === "playlist" && queue.length > 0);
+    const isTrackSelected = current >= 0 && current < queue.length;
+    const canPlayPrevious = current > 0 || (loop === "playlist" && queue.length > 0);
+    const canPlayNext = current + 1 < queue.length || (loop === "playlist" && queue.length > 0);
 
     return (
         <div
@@ -177,9 +150,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                     "group-hover:bg-[var(--bg-primary)] duration-700 ease-in-out"
                 )}
                 style={{
-                    width: `${(Math.max(0, Math.min(currentTime / (duration || 1), 1)) * 100).toFixed(
-                        2
-                    )}%`,
+                    width: `${(
+                        Math.max(0, Math.min(currentTime / (duration || 1), 1)) * 100
+                    ).toFixed(2)}%`,
                 }}
             />
             <audio
@@ -194,17 +167,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                     <div
                         className="w-12 h-12 rounded-xl shrink-0"
                         style={{
-                            background: queue[currentTrackIndex]?.coverUrl
-                                ? `url(${queue[currentTrackIndex].coverUrl}) center/cover`
+                            background: queue[current]?.coverUrl
+                                ? `url(${queue[current].coverUrl}) center/cover`
                                 : "var(--bg-tertiary)",
                         }}></div>
                     <div className="truncate">
                         <h2 className="text-[var(--text-normal)] text-base font-semibold m-0 truncate">
-                            {isTrackSelected ? queue[currentTrackIndex]?.name : "No track selected"}
+                            {isTrackSelected ? queue[current]?.name : "No track selected"}
                         </h2>
-                        {isTrackSelected && queue[currentTrackIndex]?.artist && (
+                        {isTrackSelected && queue[current]?.artist && (
                             <p className="text-[var(--text-secondary)] text-xs m-0 truncate">
-                                {queue[currentTrackIndex].artist}
+                                {queue[current].artist}
                             </p>
                         )}
                     </div>

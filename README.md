@@ -13,8 +13,15 @@ An simple music player with focus on lyrics display.
 - [x] (04/26/2025 - v0.4.0) Add shuffle and loop control
 - [x] (04/26/2025 - v0.4.0) Add volume control
 - [ ] Add PWA support
-- [-] (04/30/2025 - 0.5.3) Improve other UI/UX*
+- [-] (05/03/2025 - 0.5.4) Improve other UI/UX*
 - [ ] Save volume level, shuffle, loop, dark mode
+
+Notes for v0.5.x:
+- [ ] Update the "Add Track" button (content and layout)
+- [x] Wait several miliseconds before calculating the scroll amount (lyrics)
+- [x] Refine the show/hide lyrics button
+- [x] Hide lyrics scrollbar?
+- [x] Auto-play next should move the lyrics view to the top
 
 ## Future Ideas:
 - [ ] Add more codecs support:

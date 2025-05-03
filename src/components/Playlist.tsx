@@ -4,12 +4,11 @@ import { Button } from "./Button/Button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon } from "@hugeicons-pro/core-solid-rounded";
 import { cn } from "../lib/utils";
+import { useCurrentTrack } from "../hooks/useCurrentTrack";
 
 interface PlaylistProps {
     playlist: Track[];
     setPlaylist: React.Dispatch<React.SetStateAction<Track[]>>;
-    currentTrackIndex: number;
-    setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>;
     queue: Track[];
     setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
     playTrack: (track: Track, index: number) => Promise<void>;
@@ -22,14 +21,14 @@ let playlistId = 0;
 const Playlist: React.FC<PlaylistProps> = ({
     playlist,
     setPlaylist,
-    currentTrackIndex,
-    setCurrentTrackIndex,
     queue,
     setQueue,
     playTrack,
     resetState,
     className,
 }) => {
+    const { current, dispatch } = useCurrentTrack();
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleAddTrack = useCallback(() => {
@@ -113,7 +112,7 @@ const Playlist: React.FC<PlaylistProps> = ({
         (index: number) => {
             setPlaylist((prev) => {
                 const newPlaylist = prev.filter((_, i) => i !== index);
-                if (index === currentTrackIndex) {
+                if (index === current) {
                     resetState();
                 }
                 return newPlaylist;
@@ -121,20 +120,20 @@ const Playlist: React.FC<PlaylistProps> = ({
             setQueue((prev) => {
                 const newQueue = prev.filter((_, i) => i !== index);
                 if (
-                    index <= currentTrackIndex &&
-                    currentTrackIndex >= 0 &&
-                    currentTrackIndex < prev.length
+                    index <= current &&
+                    current >= 0 &&
+                    current < prev.length
                 ) {
-                    const currentTrack = prev[currentTrackIndex];
+                    const currentTrack = prev[current];
                     const newIndex = newQueue.findIndex((track) => track.id === currentTrack.id);
-                    setCurrentTrackIndex(newIndex);
+                    dispatch(newIndex);
 
                     console.log(newIndex)
                 }
                 return newQueue;
             });
         },
-        [currentTrackIndex, resetState, setCurrentTrackIndex, setPlaylist, setQueue]
+        [current, resetState, dispatch, setPlaylist, setQueue]
     );
 
     const handlePlayTrack = useCallback(
@@ -171,7 +170,7 @@ const Playlist: React.FC<PlaylistProps> = ({
                             key={index}
                             className={cn(
                                 "flex justify-between items-center p-2 rounded-lg",
-                                track.id === queue[currentTrackIndex]?.id
+                                track.id === queue[current]?.id
                                     ? "bg-blue-100 dark:bg-blue-900"
                                     : "hover:bg-gray-100 dark:hover:bg-gray-700",
                                 "hover:[&>.btn]:visible text-sm sm:text-base"

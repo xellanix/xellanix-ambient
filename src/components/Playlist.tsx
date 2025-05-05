@@ -2,7 +2,7 @@ import React, { useRef, useCallback } from "react";
 import { Track, LyricLine } from "../types";
 import { Button } from "./Button/Button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon } from "@hugeicons-pro/core-solid-rounded";
+import { Add01Icon, Cancel01Icon } from "@hugeicons-pro/core-solid-rounded";
 import { cn } from "../lib/utils";
 import { useCurrentTrack } from "../hooks/useCurrentTrack";
 
@@ -27,7 +27,7 @@ const Playlist: React.FC<PlaylistProps> = ({
     resetState,
     className,
 }) => {
-    const { current, dispatch } = useCurrentTrack();
+    const [current, dispatch] = useCurrentTrack();
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,16 +119,12 @@ const Playlist: React.FC<PlaylistProps> = ({
             });
             setQueue((prev) => {
                 const newQueue = prev.filter((_, i) => i !== index);
-                if (
-                    index <= current &&
-                    current >= 0 &&
-                    current < prev.length
-                ) {
+                if (index <= current && current >= 0 && current < prev.length) {
                     const currentTrack = prev[current];
                     const newIndex = newQueue.findIndex((track) => track.id === currentTrack.id);
                     dispatch(newIndex);
 
-                    console.log(newIndex)
+                    console.log(newIndex);
                 }
                 return newQueue;
             });
@@ -147,21 +143,27 @@ const Playlist: React.FC<PlaylistProps> = ({
 
     return (
         <div className={className}>
-            <h2 className="text-lg sm:text-xl font-semibold text-[var(--text-normal)] mb-2 sm:mb-4">
-                Playlist
-            </h2>
-            <div className="mb-2 sm:mb-4">
-                <Button styleType="accent" onClick={handleAddTrack}>
-                    Add Track
-                </Button>
-                <input
-                    type="file"
-                    accept="audio/*,.lrc"
-                    multiple
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className="hidden"
-                />
+            <div className="flex flex-row mb-2 sm:mb-4 items-center">
+                <h2 className="flex-1 text-lg sm:text-xl font-semibold text-[var(--text-normal)]">
+                    Playlist
+                </h2>
+                <div>
+                    <Button
+                        styleType="accent"
+                        onClick={handleAddTrack}
+                        className="w-8 h-7.5 [--button-p:theme(padding.2)]"
+                        title="Add Track">
+                        <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={0} />
+                    </Button>
+                    <input
+                        type="file"
+                        accept="audio/*,.lrc"
+                        multiple
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
+                </div>
             </div>
             <div className="flex-1 overflow-auto">
                 <ul className="space-y-1 sm:space-y-2">

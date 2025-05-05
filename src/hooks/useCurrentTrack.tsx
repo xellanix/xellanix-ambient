@@ -1,19 +1,21 @@
 import React, { createContext, useContext } from "react";
 
-interface TrackContextProps {
-    current: number;
-    dispatch: React.Dispatch<React.SetStateAction<number>>;
-}
-
 interface TrackProviderProps {
-    value: { current: number; dispatch: React.Dispatch<React.SetStateAction<number>> };
+    value: number;
+    dispatcher: React.Dispatch<React.SetStateAction<number>>;
     children: React.ReactNode;
 }
 
-const TrackContext = createContext<TrackContextProps>({current: -1, dispatch: () => {}});
+type TrackContextType = [number, React.Dispatch<React.SetStateAction<number>>];
 
-const TrackProvider: React.FC<TrackProviderProps> = ({ value, children }) => {
-    return <TrackContext.Provider value={value}>{children}</TrackContext.Provider>;
+const TrackContext = createContext<TrackContextType>([
+    -1,
+    () => {},
+]);
+
+const TrackProvider: React.FC<TrackProviderProps> = ({ value, dispatcher, children }) => {
+    const memo = React.useMemo<TrackContextType>(() => [value, dispatcher], [value, dispatcher]);
+    return <TrackContext.Provider value={memo}>{children}</TrackContext.Provider>;
 };
 
 const useCurrentTrack = () => {
@@ -24,6 +26,6 @@ const useCurrentTrack = () => {
     }
 
     return context;
-}
+};
 
 export { TrackProvider, useCurrentTrack };

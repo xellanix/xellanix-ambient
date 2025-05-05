@@ -35,7 +35,7 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
 
             let scrollTop = element.offsetTop - panel.offsetTop - (panelHeight - elementHeight) / 2;
 
-            if (index <= 0) {
+            if (index < 0) {
                 scrollTop = 0;
             } else if (index === totalLyrics - 1) {
                 scrollTop = panel.scrollHeight - panelHeight;
@@ -57,12 +57,12 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
         <div
             className="p-6 rounded-lg shadow-md flex-1 gap-y-8 flex flex-col overflow-y-auto scroll-container no-scrollbar [mask-image:linear-gradient(transparent,black_40%_60%,transparent)]"
             ref={lyricsRef}>
-            <div className="min-h-[40%]" />
+            <div className="min-h-[40dvh]" />
             {lyrics.length ? (
                 lyrics.map((lyric, index) => (
                     <p
                         key={index}
-                        className={`font-lyrics text-left text-3xl font-bold md:text-4xl lg:text-5xl py-1 cursor-pointer transition-all duration-300 ${
+                        className={`font-lyrics text-left text-5xl font-bold sm:text-3xl md:text-4xl lg:text-5xl py-1 cursor-pointer transition-all duration-300 ${
                             index === currentLyricIndex
                                 ? "text-[var(--bg-accent)] opacity-100"
                                 : "text-[var(--text-secondary)] opacity-10 hover:opacity-40"
@@ -74,9 +74,9 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
             ) : (
                 <p className="text-center text-[var(--text-tertiary)]">No lyrics available</p>
             )}
-            <div className="min-h-[40%]" />
+            <div className="min-h-[40dvh]" />
         </div>
     );
 };
 
-export default LyricsDisplay;
+export default React.memo(LyricsDisplay);

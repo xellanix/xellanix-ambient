@@ -6,6 +6,8 @@ import {
     FC,
     useContext,
     createContext,
+    memo,
+    useMemo,
 } from "react";
 import { cn } from "../lib/utils";
 
@@ -26,7 +28,7 @@ const SliderContext = createContext<SliderContextProps>({
     handleClick: () => {},
 });
 
-export const SliderOption: FC<{ index: number, children: ReactElement }> = ({ index, children }) => {
+const SliderOptionRaw: FC<{ index: number, children: ReactElement }> = ({ index, children }) => {
     const { selected, handleClick } = useContext(SliderContext);
 
     return (
@@ -42,7 +44,10 @@ export const SliderOption: FC<{ index: number, children: ReactElement }> = ({ in
     );
 };
 
-const SliderRadioButton: FC<SliderRadioButtonProps> = ({
+const SliderOption = memo(SliderOptionRaw);
+export { SliderOption };
+
+const SliderRadioButtonRaw: FC<SliderRadioButtonProps> = ({
     className,
     children,
     initialSelectedIndex = 0,
@@ -59,6 +64,8 @@ const SliderRadioButton: FC<SliderRadioButtonProps> = ({
         [onChange]
     );
 
+    const providerMemo = useMemo(() => ({ selected, handleClick }), [selected, handleClick]);
+
     return (
         <div className={cn("w-full p-1 bg-[var(--bg-secondary)] rounded-md", className)}>
             <div className="relative w-full h-full bg-[var(--bg-secondary)] rounded-sm flex justify-between items-center">
@@ -71,7 +78,7 @@ const SliderRadioButton: FC<SliderRadioButtonProps> = ({
                     }}
                 />
 
-                <SliderContext.Provider value={{ selected, handleClick }}>
+                <SliderContext.Provider value={providerMemo}>
                     {children}
                 </SliderContext.Provider>
             </div>
@@ -79,4 +86,5 @@ const SliderRadioButton: FC<SliderRadioButtonProps> = ({
     );
 };
 
+const SliderRadioButton = memo(SliderRadioButtonRaw);
 export default SliderRadioButton;

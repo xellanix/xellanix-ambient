@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import "./Slider.css";
 import { HTMLProps } from "../../types";
 import { cn } from "../../lib/utils";
@@ -116,7 +116,7 @@ const updateValue = (
     );
 };
 
-export function SliderInput({
+const SliderInput = memo(function SliderInput({
     sliderInputRef,
     style,
     defaultValue,
@@ -183,9 +183,11 @@ export function SliderInput({
             {...props}
         />
     );
-}
+});
 
-export default function Slider({
+export { SliderInput };
+
+function SliderRaw({
     sliderInputRef,
     min,
     max,
@@ -358,4 +360,7 @@ export default function Slider({
             <div className="xellanix-slider-thumb" ref={thumbRef} />
         </div>
     );
-}
+};
+
+const Slider = memo(SliderRaw);
+export default Slider;

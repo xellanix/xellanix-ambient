@@ -9,7 +9,7 @@ interface QueueProps {
 }
 
 const Queue: React.FC<QueueProps> = ({ queue, playTrack, className }) => {
-    const { current } = useCurrentTrack();
+    const [current] = useCurrentTrack();
 
     const changeTrack = useCallback(
         async (index: number) => {

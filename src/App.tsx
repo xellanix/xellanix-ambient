@@ -15,6 +15,10 @@ import { Moon02Icon, Sun03Icon } from "@hugeicons-pro/core-solid-rounded";
 import { TrackProvider } from "./hooks/useCurrentTrack";
 import { LyricsDisplayToggle, ViewSelector } from "./components/Sidebar";
 
+const getIsShuffled = () => parseInt(window.localStorage.getItem("isShuffled") || "0") === 1;
+const getLoopMode = () =>
+    (window.localStorage.getItem("loopMode") as "none" | "track" | "playlist") || "none";
+
 const App: React.FC = () => {
     const [playlist, setPlaylist] = useState<Track[]>([]);
     const [queue, setQueue] = useState<Track[]>([]);
@@ -26,8 +30,8 @@ const App: React.FC = () => {
     const [darkMode, setDarkMode] = useState<boolean>(false);
     const [showLyrics, setShowLyrics] = useState<boolean>(true);
     const [viewMode, setViewMode] = useState<"playlist" | "queue">("playlist");
-    const [shuffle, setShuffle] = useState<boolean>(false);
-    const [loop, setLoop] = useState<"none" | "track" | "playlist">("none");
+    const [shuffle, setShuffle] = useState<boolean>(getIsShuffled);
+    const [loop, setLoop] = useState<"none" | "track" | "playlist">(getLoopMode);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const lyricsRef = useRef<HTMLDivElement | null>(null);
     const shuffleSignatureRef = useRef<string>("");
@@ -89,13 +93,24 @@ const App: React.FC = () => {
     }, []);
 
     const toggleLyrics = useCallback(() => setShowLyrics((prev) => !prev), []);
-    const toggleShuffle = useCallback(() => setShuffle((prev) => !prev), []);
+    const toggleShuffle = useCallback(
+        () =>
+            setShuffle((prev) => {
+                const newVal = !prev;
+                window.localStorage.setItem("isShuffled", newVal ? "1" : "0");
+                return newVal;
+            }),
+        []
+    );
 
     const toggleLoop = useCallback(() => {
         setLoop((prev) => {
-            if (prev === "none") return "track";
-            if (prev === "track") return "playlist";
-            return "none";
+            let newType: "none" | "track" | "playlist" = "none";
+            if (prev === "none") newType = "track";
+            else if (prev === "track") newType = "playlist";
+
+            window.localStorage.setItem("loopMode", newType);
+            return newType;
         });
     }, []);
 

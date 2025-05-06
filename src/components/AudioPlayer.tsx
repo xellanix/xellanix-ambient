@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Track } from "../types";
 import Slider, { SliderInput, useSlider } from "./Slider/Slider";
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react";
@@ -274,6 +274,12 @@ const AudioPlayerVolume: React.FC<AudioPlayerVolumeProps> = ({ audioRef }) => {
     const volumeSliderInputRef = useSlider();
 
     const [volume, setVolume] = useState<number>(getStoredVolume);
+
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.volume = volume / 100;
+        }
+    }, []);
 
     const handleVolumeChange = useCallback(
         (newVolume: number) => {

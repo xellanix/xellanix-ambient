@@ -55,8 +55,8 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
 
     return (
         <div
-            className="p-6 rounded-lg shadow-md flex-1 gap-y-8 flex flex-col overflow-y-auto scroll-container no-scrollbar [mask-image:linear-gradient(transparent,black_40%_60%,transparent)]"
-            ref={lyricsRef}>
+            ref={lyricsRef}
+            className="p-6 rounded-lg shadow-md flex-1 gap-y-8 flex flex-col overflow-y-auto scroll-container no-scrollbar [mask-image:linear-gradient(transparent,black_40%_60%,transparent)]">
             <div className="min-h-[40dvh]" />
             {lyrics.length ? (
                 lyrics.map((lyric, index) => (

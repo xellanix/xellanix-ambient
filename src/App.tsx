@@ -11,13 +11,40 @@ import Playlist from "./components/Playlist";
 import Queue from "./components/Queue";
 import { Track } from "./types";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Moon02Icon, Sun03Icon } from "@hugeicons-pro/core-solid-rounded";
+import {
+    ArrowShrink02Icon,
+    FullScreenIcon,
+    Moon02Icon,
+    Sun03Icon,
+} from "@hugeicons-pro/core-solid-rounded";
 import { TrackProvider } from "./hooks/useCurrentTrack";
 import { LyricsDisplayToggle, ViewSelector } from "./components/Sidebar";
+import { Button } from "./components/Button/Button";
 
 const getIsShuffled = () => parseInt(window.localStorage.getItem("isShuffled") || "0") === 1;
 const getLoopMode = () =>
     (window.localStorage.getItem("loopMode") as "none" | "track" | "playlist") || "none";
+
+const MaximizeLyricsButton = React.memo(
+    ({ isMaximized, onClick }: { isMaximized: boolean; onClick: () => void }) => (
+        <div className="absolute z-50 right-0">
+            <Button
+                styleType="secondary"
+                className="w-10 h-9.5 [--button-p:theme(padding.2)] opacity-0 group-hover:animate-[show-maximize_4s] hover:!opacity-100 focus-visible:!opacity-100"
+                onClick={onClick}
+                title={isMaximized ? "Restore Lyrics" : "Maximize Lyrics"}>
+                <HugeiconsIcon
+                    icon={FullScreenIcon}
+                    altIcon={ArrowShrink02Icon}
+                    showAlt={isMaximized}
+                    className="size-6"
+                    strokeWidth={0}
+                    opacity={0.5}
+                />
+            </Button>
+        </div>
+    )
+);
 
 const App: React.FC = () => {
     const [playlist, setPlaylist] = useState<Track[]>([]);
@@ -32,6 +59,7 @@ const App: React.FC = () => {
     const [viewMode, setViewMode] = useState<"playlist" | "queue">("playlist");
     const [shuffle, setShuffle] = useState<boolean>(getIsShuffled);
     const [loop, setLoop] = useState<"none" | "track" | "playlist">(getLoopMode);
+    const [maximizeLyrics, setMaximizeLyrics] = useState<boolean>(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const lyricsRef = useRef<HTMLDivElement | null>(null);
     const shuffleSignatureRef = useRef<string>("");
@@ -204,6 +232,8 @@ const App: React.FC = () => {
         [audioRef, setDuration]
     );
 
+    const toggleMaximizeLyrics = useCallback(() => setMaximizeLyrics((prev) => !prev), []);
+
     /* const providerMemo = useMemo(
         () => [currentTrackIndex, setCurrentTrackIndex],
         [currentTrackIndex, setCurrentTrackIndex]
@@ -211,9 +241,9 @@ const App: React.FC = () => {
 
     return (
         <TrackProvider value={currentTrackIndex} dispatcher={setCurrentTrackIndex}>
-            <div className="container mx-auto p-2 sm:p-4 bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col gap-2 sm:gap-4 overflow-hidden">
+            <div className="container mx-auto p-2 sm:p-4 bg-gray-100 dark:bg-gray-900 min-h-screen h-screen max-h-screen flex flex-col gap-2 sm:gap-4 overflow-auto">
                 {/* Header */}
-                <div className="flex justify-between items-center">
+                {!maximizeLyrics && (<div className="flex justify-between items-center">
                     <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-normal)]">
                         Xellanix Ambient
                     </h1>
@@ -230,62 +260,70 @@ const App: React.FC = () => {
                             />
                         </button>
                     </div>
-                </div>
+                </div>)}
 
                 {/* Main Content and Sidebar */}
-                <div className="flex flex-col sm:flex-row gap-4 sm:h-[calc(100dvh-120px)]">
+                <div className="flex flex-col sm:flex-row gap-4 sm:flex-1 sm:overflow-hidden max-h-full sm:pb-8">
                     {/* Lyrics (Main Content) */}
-                    <div className="flex flex-col flex-1 overflow-auto sm:h-full max-h-[calc(100dvh-120px)]">
+                    <div className="flex flex-col flex-1 relative group overflow-auto sm:h-full max-h-full">
                         {showLyrics && (
-                            <LyricsDisplay
-                                lyrics={currentLyrics}
-                                currentLyricIndex={currentLyricIndex}
-                                lyricsRef={lyricsRef}
-                                audioRef={audioRef}
-                                setCurrentTime={setCurrentTime}
-                            />
+                            <>
+                                <MaximizeLyricsButton
+                                    isMaximized={maximizeLyrics}
+                                    onClick={toggleMaximizeLyrics}
+                                />
+                                <LyricsDisplay
+                                    lyrics={currentLyrics}
+                                    currentLyricIndex={currentLyricIndex}
+                                    lyricsRef={lyricsRef}
+                                    audioRef={audioRef}
+                                    setCurrentTime={setCurrentTime}
+                                />
+                            </>
                         )}
                     </div>
 
                     {/* Sidebar (Playlist/Queue) */}
-                    <div className="w-full sm:w-1/4 sm:min-w-[300px] flex flex-col">
-                        <div className="flex-1 bg-[var(--bg-primary)] rounded-lg flex flex-col h-full max-h-[50dvh] sm:max-h-full">
-                            {/* Content Area */}
-                            <div className="flex flex-col flex-1 p-4 h-full max-h-full overflow-hidden">
-                                {viewMode === "playlist" ? (
-                                    <Playlist
-                                        playlist={playlist}
-                                        setPlaylist={setPlaylist}
-                                        queue={queue}
-                                        setQueue={setQueue}
-                                        playTrack={playTrack}
-                                        resetState={resetState}
-                                        className="!p-0 flex flex-col flex-1 overflow-hidden"
+                    {!maximizeLyrics && (
+                        <div className="w-full sm:w-1/4 sm:min-w-[300px] flex flex-col not-sm:pb-10">
+                            <div className="flex-1 bg-[var(--bg-primary)] rounded-lg flex flex-col h-full max-h-[50dvh] sm:max-h-full">
+                                {/* Content Area */}
+                                <div className="flex flex-col flex-1 p-4 h-full max-h-full overflow-hidden">
+                                    {viewMode === "playlist" ? (
+                                        <Playlist
+                                            playlist={playlist}
+                                            setPlaylist={setPlaylist}
+                                            queue={queue}
+                                            setQueue={setQueue}
+                                            playTrack={playTrack}
+                                            resetState={resetState}
+                                            className="!p-0 flex flex-col flex-1 overflow-hidden"
+                                        />
+                                    ) : (
+                                        <Queue
+                                            queue={queue}
+                                            playTrack={playTrack}
+                                            className="!p-0 flex flex-col flex-1 overflow-hidden"
+                                        />
+                                    )}
+                                </div>
+                                {/* Divider */}
+                                <div className="border-t border-[var(--bg-tertiary)] mx-4" />
+                                {/* Sliding Puzzle Switcher */}
+                                <div className="relative p-4 flex justify-center items-center gap-2">
+                                    <ViewSelector onChange={changeSidebarView} />
+                                    <LyricsDisplayToggle
+                                        showLyrics={showLyrics}
+                                        toggleLyrics={toggleLyrics}
                                     />
-                                ) : (
-                                    <Queue
-                                        queue={queue}
-                                        playTrack={playTrack}
-                                        className="!p-0 flex flex-col flex-1 overflow-hidden"
-                                    />
-                                )}
-                            </div>
-                            {/* Divider */}
-                            <div className="border-t border-[var(--bg-tertiary)] mx-4" />
-                            {/* Sliding Puzzle Switcher */}
-                            <div className="relative p-4 flex justify-center items-center gap-2">
-                                <ViewSelector onChange={changeSidebarView} />
-                                <LyricsDisplayToggle
-                                    showLyrics={showLyrics}
-                                    toggleLyrics={toggleLyrics}
-                                />
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Audio Player */}
-                <div className="fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 sm:w-40 max-w-[90%] sm:max-w-[400px]">
+                <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 sm:w-40 max-w-[90%] sm:max-w-[400px]">
                     <AudioPlayer
                         audioRef={audioRef}
                         loadedMetadata={loadedMetadata}

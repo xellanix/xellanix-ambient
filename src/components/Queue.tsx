@@ -1,15 +1,15 @@
 import React, { useCallback } from "react";
 import { Track } from "../types";
-import { useCurrentTrack } from "../hooks/useCurrentTrack";
+import { useCurrentTrackIndex, useQueue } from "../hooks/useService";
 
 interface QueueProps {
-    queue: Track[];
     playTrack: (track: Track, index: number) => Promise<void>;
     className?: string;
 }
 
-const Queue: React.FC<QueueProps> = ({ queue, playTrack, className }) => {
-    const [current] = useCurrentTrack();
+const Queue: React.FC<QueueProps> = ({ playTrack, className }) => {
+    const current = useCurrentTrackIndex();
+    const queue = useQueue();
 
     const changeTrack = useCallback(
         async (index: number) => {

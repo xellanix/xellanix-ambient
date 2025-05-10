@@ -1,25 +1,25 @@
 import React, { useCallback, useEffect } from "react";
 import { LyricLine } from "../types";
+import { useCurrentLyricIndex, useCurrentTimeDispatcher } from "../hooks/useService";
 
 interface LyricsDisplayProps {
     lyrics: LyricLine[];
-    currentLyricIndex: number;
     lyricsRef: React.RefObject<HTMLDivElement | null>;
     audioRef: React.RefObject<HTMLAudioElement | null>;
-    setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
     lyrics,
-    currentLyricIndex,
     lyricsRef,
     audioRef,
-    setCurrentTime,
 }) => {
+    const currentTimeDispatcher = useCurrentTimeDispatcher();
+    const currentLyricIndex = useCurrentLyricIndex();
+
     const handleLyricClick = (time: number) => {
         if (audioRef.current) {
             audioRef.current.currentTime = time;
-            setCurrentTime(time);
+            currentTimeDispatcher(time);
         }
     };
 

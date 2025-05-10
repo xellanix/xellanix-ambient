@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Track } from "../types";
 import Slider, { SliderInput, useSlider } from "./Slider/Slider";
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react";
 import {
@@ -15,7 +14,7 @@ import {
 } from "@hugeicons-pro/core-solid-rounded";
 import { Button } from "./Button/Button";
 import { cn } from "../lib/utils";
-import { useCurrentTrack } from "../hooks/useCurrentTrack";
+import { useCurrentTime, useCurrentTimeDispatcher, useCurrentTrackIndex, useQueue } from "../hooks/useService";
 
 interface MemoHugeiconsIconProps {
     icon: IconSvgElement;
@@ -42,7 +41,6 @@ interface AudioPlayerProps {
 
 interface AudioPlayerControllerProps {
     audioRef: React.RefObject<HTMLAudioElement | null>;
-    queue: Track[];
     isPlaying: boolean;
     setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
     shuffle: boolean;
@@ -55,8 +53,6 @@ interface AudioPlayerControllerProps {
 
 interface AudioPlayerTimelineProps {
     audioRef: React.RefObject<HTMLAudioElement | null>;
-    currentTime: number;
-    setCurrentTime: React.Dispatch<React.SetStateAction<number>>;
     duration: number;
 }
 
@@ -70,7 +66,9 @@ const formatTime = (seconds: number): string => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
-const AudioPlayerIsland: React.FC<{ currentTime: number; duration: number }> = ({ currentTime, duration }) => {
+const AudioPlayerIsland: React.FC<{ duration: number }> = ({ duration }) => {
+    const currentTime = useCurrentTime();
+
     const style = useMemo(
         () => ({
             width: `${(Math.max(0, Math.min(currentTime / (duration || 1), 1)) * 100).toFixed(2)}%`,
@@ -89,8 +87,9 @@ const AudioPlayerIsland: React.FC<{ currentTime: number; duration: number }> = (
     );
 };
 
-const AudioPlayerTrack: React.FC<{ queue: Track[] }> = ({ queue }) => {
-    const [current] = useCurrentTrack();
+const AudioPlayerTrack: React.FC = () => {
+    const current = useCurrentTrackIndex();
+    const queue = useQueue();
 
     const isTrackSelected = useMemo(
         () => current >= 0 && current < queue.length,
@@ -125,7 +124,6 @@ const AudioPlayerTrack: React.FC<{ queue: Track[] }> = ({ queue }) => {
 
 const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
     audioRef,
-    queue,
     isPlaying,
     setIsPlaying,
     shuffle,
@@ -135,7 +133,8 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
     handlePlay,
     playNext,
 }) => {
-    const [current] = useCurrentTrack();
+    const current = useCurrentTrackIndex();
+    const queue = useQueue();
 
     const togglePlay = useCallback(() => {
         if (audioRef.current && current >= 0) {
@@ -234,10 +233,11 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
 
 const AudioPlayerTimeline: React.FC<AudioPlayerTimelineProps> = ({
     audioRef,
-    currentTime,
-    setCurrentTime,
     duration,
 }) => {
+    const currentTime = useCurrentTime();
+    const setCurrentTime = useCurrentTimeDispatcher();
+    
     const handleSeek = useCallback(
         (newTime: number) => {
             setCurrentTime(newTime);

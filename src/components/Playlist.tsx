@@ -4,30 +4,21 @@ import { Button } from "./Button/Button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, Cancel01Icon } from "@hugeicons-pro/core-solid-rounded";
 import { cn } from "../lib/utils";
-import { useCurrentTrack } from "../hooks/useCurrentTrack";
+import { useCurrentTrackIndex, useQueue } from "../hooks/useService";
 
 interface PlaylistProps {
     playlist: Track[];
     setPlaylist: React.Dispatch<React.SetStateAction<Track[]>>;
-    queue: Track[];
-    setQueue: React.Dispatch<React.SetStateAction<Track[]>>;
     playTrack: (track: Track, index: number) => Promise<void>;
-    resetState: () => void;
     className?: string;
 }
 
 let playlistId = 0;
 
-const Playlist: React.FC<PlaylistProps> = ({
-    playlist,
-    setPlaylist,
-    queue,
-    setQueue,
-    playTrack,
-    resetState,
-    className,
-}) => {
-    const [current, dispatch] = useCurrentTrack();
+const Playlist: React.FC<PlaylistProps> = ({ playlist, setPlaylist, playTrack, className }) => {
+    //const [current, dispatch] = useCurrentTrack();
+    const current = useCurrentTrackIndex();
+    const queue = useQueue();
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -101,35 +92,17 @@ const Playlist: React.FC<PlaylistProps> = ({
             }
 
             setPlaylist((prev) => [...prev, ...newTracks]);
-            setQueue((prev) => [...prev, ...newTracks]);
 
             if (fileInputRef.current) fileInputRef.current.value = "";
         },
-        [fetchLyrics, setPlaylist, setQueue]
+        [fetchLyrics]
     );
 
     const handleRemoveTrack = useCallback(
-        (index: number) => {
-            setPlaylist((prev) => {
-                const newPlaylist = prev.filter((_, i) => i !== index);
-                if (index === current) {
-                    resetState();
-                }
-                return newPlaylist;
-            });
-            setQueue((prev) => {
-                const newQueue = prev.filter((_, i) => i !== index);
-                if (index <= current && current >= 0 && current < prev.length) {
-                    const currentTrack = prev[current];
-                    const newIndex = newQueue.findIndex((track) => track.id === currentTrack.id);
-                    dispatch(newIndex);
-
-                    console.log(newIndex);
-                }
-                return newQueue;
-            });
+        (id: number) => {
+            setPlaylist((prev) => prev.filter((_) => _.id !== id));
         },
-        [current, resetState, dispatch, setPlaylist, setQueue]
+        [current]
     );
 
     const handlePlayTrack = useCallback(
@@ -196,7 +169,7 @@ const Playlist: React.FC<PlaylistProps> = ({
                                 styleType="secondary"
                                 title="Remove Track"
                                 className="invisible size-5 sm:size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                                onClick={() => handleRemoveTrack(index)}>
+                                onClick={() => handleRemoveTrack(track.id)}>
                                 <HugeiconsIcon
                                     icon={Cancel01Icon}
                                     className="size-2 sm:size-3"

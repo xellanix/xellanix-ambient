@@ -1,35 +1,36 @@
-import React, {
-    createContext,
-    useContext,
-    useEffect,
-    useState,
-} from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Track } from "../types";
+import { useLyricsRef } from "./useSharedRef";
+import { binarySearch, shuffleArray } from "../lib/utils";
 
 interface ServiceProviderProps {
-    lyricsRef: React.RefObject<HTMLDivElement | null>;
     children: React.ReactNode;
 }
+
+interface PlaylistProviderProps {
+    children: React.ReactNode;
+}
+
+type DispatchContext<T> = React.Dispatch<React.SetStateAction<T>>;
 
 const QueueContext = createContext<Track[]>([]);
 const CurrentTrackIndexContext = createContext<number>(-1);
 const CurrentLyricIndexContext = createContext<number>(-1);
 const CurrentTimeContext = createContext<number>(0);
 
-const QueueDispatcherContext = createContext<React.Dispatch<React.SetStateAction<Track[]>>>(
-    () => {}
-);
-const CurrentTrackIndexDispatcherContext = createContext<
-    React.Dispatch<React.SetStateAction<number>>
->(() => {});
-const CurrentLyricIndexDispatcherContext = createContext<
-    React.Dispatch<React.SetStateAction<number>>
->(() => {});
-const CurrentTimeDispatcherContext = createContext<React.Dispatch<React.SetStateAction<number>>>(
-    () => {}
-);
+const QueueDispatcherContext = createContext<DispatchContext<Track[]>>(() => {});
+const CurrentTrackIndexDispatcherContext = createContext<DispatchContext<number>>(() => {});
+const CurrentLyricIndexDispatcherContext = createContext<DispatchContext<number>>(() => {});
+const CurrentTimeDispatcherContext = createContext<DispatchContext<number>>(() => {});
 
-const ServiceProvider: React.FC<ServiceProviderProps> = ({ lyricsRef, children }) => {
+const PlaylistContext = createContext<Track[]>([]);
+const ShuffleContext = createContext<boolean>(false);
+const PlaylistDispatcherContext = createContext<DispatchContext<Track[]>>(() => {});
+const ShuffleDispatcherContext = createContext<DispatchContext<boolean>>(() => {});
+
+const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
+    const lyricsRef = useLyricsRef();
+
     const [queue, setQueue] = useState<Track[]>([]);
     const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(-1);
     const [currentLyricIndex, setCurrentLyricIndex] = useState<number>(-1);
@@ -57,7 +58,7 @@ const ServiceProvider: React.FC<ServiceProviderProps> = ({ lyricsRef, children }
         if (index !== currentLyricIndex) {
             setCurrentLyricIndex(index);
         }
-    }, [currentTime, currentTrackIndex, queue, currentLyricIndex]);
+    }, [currentTime]);
 
     return (
         <QueueDispatcherContext.Provider value={setQueue}>
@@ -79,6 +80,67 @@ const ServiceProvider: React.FC<ServiceProviderProps> = ({ lyricsRef, children }
         </QueueDispatcherContext.Provider>
     );
 };
+
+const getIsShuffled = () => parseInt(window.localStorage.getItem("isShuffled") || "0") === 1;
+const PlaylistProvider = React.memo(
+    ({ children, resetState }: PlaylistProviderProps & { resetState: () => void }) => {
+        const [playlist, setPlaylist] = useState<Track[]>([]);
+        const [shuffle, setShuffle] = useState<boolean>(getIsShuffled);
+        const shuffleSignatureRef = useRef<string>("");
+
+        const setQueue = useQueueDispatcher();
+        const currentTrackIndex = useCurrentTrackIndex();
+        const queue = useQueue();
+        const setCurrentTrackIndex = useCurrentTrackIndexDispatcher();
+
+        useEffect(() => {
+            const newSignature = `${shuffle}:${playlist.map((track) => track.url).join(",")}`;
+
+            if (newSignature === shuffleSignatureRef.current) {
+                return;
+            }
+
+            shuffleSignatureRef.current = newSignature;
+
+            if (shuffle) {
+                const shuffled = shuffleArray(playlist);
+                if (!Object.is(queue, shuffled)) {
+                    setQueue(shuffled);
+
+                    if (currentTrackIndex >= 0 && currentTrackIndex < queue.length) {
+                        // Get from the previous version queue
+                        const queueId = queue[currentTrackIndex].id;
+                        const newIndex = shuffled.findIndex((t) => t.id === queueId);
+
+                        if (newIndex !== -1) setCurrentTrackIndex(newIndex);
+                        else resetState();
+                    }
+                }
+            } else {
+                if (!Object.is(playlist, queue)) {
+                    const newIndex = binarySearch(playlist, queue[currentTrackIndex]?.id ?? -1);
+
+                    setQueue(playlist);
+
+                    if (newIndex !== -1) setCurrentTrackIndex(newIndex);
+                    else resetState();
+                }
+            }
+        }, [playlist, shuffle]);
+
+        return (
+            <PlaylistDispatcherContext.Provider value={setPlaylist}>
+                <ShuffleDispatcherContext.Provider value={setShuffle}>
+                    <PlaylistContext.Provider value={playlist}>
+                        <ShuffleContext.Provider value={shuffle}>
+                            {children}
+                        </ShuffleContext.Provider>
+                    </PlaylistContext.Provider>
+                </ShuffleDispatcherContext.Provider>
+            </PlaylistDispatcherContext.Provider>
+        );
+    }
+);
 
 const useQueue = () => {
     const value = useContext(QueueContext);
@@ -154,8 +216,49 @@ const useCurrentTimeDispatcher = () => {
     return value;
 };
 
+const usePlaylist = () => {
+    const value = useContext(PlaylistContext);
+
+    if (value == null) {
+        throw new Error("playlist hook must be used within a PlaylistProvider");
+    }
+
+    return value;
+};
+
+const usePlaylistDispatcher = () => {
+    const value = useContext(PlaylistDispatcherContext);
+
+    if (value == null) {
+        throw new Error("playlist hook must be used within a PlaylistProvider");
+    }
+
+    return value;
+};
+
+const useShuffle = () => {
+    const value = useContext(ShuffleContext);
+
+    if (value == null) {
+        throw new Error("shuffle hook must be used within a PlaylistProvider");
+    }
+
+    return value;
+};
+
+const useShuffleDispatcher = () => {
+    const value = useContext(ShuffleDispatcherContext);
+
+    if (value == null) {
+        throw new Error("shuffle hook must be used within a PlaylistProvider");
+    }
+
+    return value;
+};
+
 export {
     ServiceProvider,
+    PlaylistProvider,
     useQueue,
     useCurrentTrackIndex,
     useCurrentLyricIndex,
@@ -164,4 +267,8 @@ export {
     useCurrentTrackIndexDispatcher,
     useCurrentLyricIndexDispatcher,
     useCurrentTimeDispatcher,
+    usePlaylist,
+    usePlaylistDispatcher,
+    useShuffle,
+    useShuffleDispatcher
 };

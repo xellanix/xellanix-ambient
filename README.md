@@ -8,16 +8,16 @@ An simple music player with focus on lyrics display.
 - [x] (04/26/2025 - v0.1.0) Add minimal playlist
 - [x] (04/26/2025 - v0.2.0) Jump to specific lyric by clicking on the lyric line
 - [x] (04/26/2025 - v0.3.0) Add light/dark mode
-- [ ] Show track cover
+- [ ] Show track cover and other details
 - [x] (04/26/2025 - v0.2.0) Animate lyrics scroll
 - [x] (04/26/2025 - v0.4.0) Add shuffle and loop control
 - [x] (04/26/2025 - v0.4.0) Add volume control
 - [ ] Add PWA support
-- [-] (05/10/2025 - 0.6.2) Improve other UI/UX*
-- [-] (05/05/2025 - 0.6.0) Save volume level, shuffle, loop, dark mode
+- [-] (05/11/2025 - 0.6.3) Improve other UI/UX*
+- [x] (05/11/2025 - 0.6.3) Save volume level, shuffle, loop, dark mode
 
 Notes for v0.6.x:
-- [ ] Save dark mode
+- [x] Save dark mode
 
 ## Future Ideas:
 - [ ] Add more codecs support:

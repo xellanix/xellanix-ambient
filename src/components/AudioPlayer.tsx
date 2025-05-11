@@ -14,7 +14,15 @@ import {
 } from "@hugeicons-pro/core-solid-rounded";
 import { Button } from "./Button/Button";
 import { cn } from "../lib/utils";
-import { useCurrentTime, useCurrentTimeDispatcher, useCurrentTrackIndex, useQueue } from "../hooks/useService";
+import {
+    useCurrentTime,
+    useCurrentTimeDispatcher,
+    useCurrentTrackIndex,
+    useQueue,
+    useShuffle,
+    useShuffleDispatcher,
+} from "../hooks/useService";
+import { useAudioRef } from "../hooks/useSharedRef";
 
 interface MemoHugeiconsIconProps {
     icon: IconSvgElement;
@@ -28,7 +36,6 @@ const MemoHugeiconsIcon = React.memo(({ ...props }: MemoHugeiconsIconProps) => {
 });
 
 interface AudioPlayerProps {
-    audioRef: React.RefObject<HTMLAudioElement | null>;
     loadedMetadata: () => void;
     handleTimeUpdate: () => void;
     handleEnded: () => Promise<void>;
@@ -40,24 +47,16 @@ interface AudioPlayerProps {
 }
 
 interface AudioPlayerControllerProps {
-    audioRef: React.RefObject<HTMLAudioElement | null>;
     isPlaying: boolean;
     setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
-    shuffle: boolean;
     loop: "none" | "track" | "playlist";
-    toggleShuffle: () => void;
     toggleLoop: () => void;
     handlePlay: (newIndex: number) => Promise<void>;
     playNext: () => Promise<void>;
 }
 
 interface AudioPlayerTimelineProps {
-    audioRef: React.RefObject<HTMLAudioElement | null>;
     duration: number;
-}
-
-interface AudioPlayerVolumeProps {
-    audioRef: React.RefObject<HTMLAudioElement | null>;
 }
 
 const formatTime = (seconds: number): string => {
@@ -123,18 +122,29 @@ const AudioPlayerTrack: React.FC = () => {
 };
 
 const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
-    audioRef,
     isPlaying,
     setIsPlaying,
-    shuffle,
     loop,
-    toggleShuffle,
     toggleLoop,
     handlePlay,
     playNext,
 }) => {
+    const audioRef = useAudioRef();
+
     const current = useCurrentTrackIndex();
     const queue = useQueue();
+    const shuffle = useShuffle();
+    const setShuffle = useShuffleDispatcher();
+
+    const toggleShuffle = useCallback(
+        () =>
+            setShuffle((prev) => {
+                const newVal = !prev;
+                window.localStorage.setItem("isShuffled", newVal ? "1" : "0");
+                return newVal;
+            }),
+        []
+    );
 
     const togglePlay = useCallback(() => {
         if (audioRef.current && current >= 0) {
@@ -149,12 +159,12 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
                 setIsPlaying(true);
             }
         }
-    }, [audioRef, current, isPlaying, setIsPlaying]);
+    }, [current, isPlaying]);
 
     const playPrevious = useCallback(async () => {
         if (current > 0) await handlePlay(current - 1);
         else if (loop === "playlist" && queue.length > 0) await handlePlay(queue.length - 1);
-    }, [current, loop, queue, handlePlay]);
+    }, [current, loop, queue.length]);
 
     const isTrackSelected = useMemo(
         () => current >= 0 && current < queue.length,
@@ -231,13 +241,12 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
     );
 };
 
-const AudioPlayerTimeline: React.FC<AudioPlayerTimelineProps> = ({
-    audioRef,
-    duration,
-}) => {
+const AudioPlayerTimeline: React.FC<AudioPlayerTimelineProps> = ({ duration }) => {
+    const audioRef = useAudioRef();
+
     const currentTime = useCurrentTime();
     const setCurrentTime = useCurrentTimeDispatcher();
-    
+
     const handleSeek = useCallback(
         (newTime: number) => {
             setCurrentTime(newTime);
@@ -269,8 +278,10 @@ const AudioPlayerTimeline: React.FC<AudioPlayerTimelineProps> = ({
 };
 
 const getIsMuted = () => parseInt(window.localStorage.getItem("isMuted") || "0") === 1;
-const getStoredVolume = () => getIsMuted() ? 0 : parseInt(window.localStorage.getItem("volume") || "100");
-const AudioPlayerVolume: React.FC<AudioPlayerVolumeProps> = ({ audioRef }) => {
+const getStoredVolume = () =>
+    getIsMuted() ? 0 : parseInt(window.localStorage.getItem("volume") || "100");
+const AudioPlayerVolume: React.FC = () => {
+    const audioRef = useAudioRef();
     const volumeSliderInputRef = useSlider();
 
     const [volume, setVolume] = useState<number>(getStoredVolume);
@@ -281,17 +292,14 @@ const AudioPlayerVolume: React.FC<AudioPlayerVolumeProps> = ({ audioRef }) => {
         }
     }, []);
 
-    const handleVolumeChange = useCallback(
-        (newVolume: number) => {
-            const clampedVolume = Math.max(0, Math.min(100, newVolume));
-            window.localStorage.setItem("volume", clampedVolume.toString());
-            setVolume(clampedVolume);
-            if (audioRef.current) {
-                audioRef.current.volume = clampedVolume / 100;
-            }
-        },
-        [audioRef]
-    );
+    const handleVolumeChange = useCallback((newVolume: number) => {
+        const clampedVolume = Math.max(0, Math.min(100, newVolume));
+        window.localStorage.setItem("volume", clampedVolume.toString());
+        setVolume(clampedVolume);
+        if (audioRef.current) {
+            audioRef.current.volume = clampedVolume / 100;
+        }
+    }, []);
 
     const handleMute = useCallback(() => {
         const isSoundOn = volume !== 0;
@@ -299,7 +307,7 @@ const AudioPlayerVolume: React.FC<AudioPlayerVolumeProps> = ({ audioRef }) => {
         const newVolume = getStoredVolume();
         setVolume(newVolume);
         if (audioRef.current) audioRef.current.volume = newVolume / 100;
-    }, [volume, audioRef]);
+    }, [volume]);
 
     return (
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0 h-full not-md:w-full not-md:max-w-56">
@@ -344,7 +352,6 @@ export const AudioPlayerTimelineMemo = React.memo(AudioPlayerTimeline);
 export const AudioPlayerVolumeMemo = React.memo(AudioPlayerVolume);
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({
-    audioRef,
     loadedMetadata,
     handleTimeUpdate,
     handleEnded,
@@ -354,6 +361,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     timelineComp,
     volumeComp,
 }) => {
+    const audioRef = useAudioRef();
+
     return (
         <div
             className={cn(

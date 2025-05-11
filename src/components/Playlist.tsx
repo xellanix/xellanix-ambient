@@ -1,22 +1,26 @@
 import React, { useRef, useCallback } from "react";
-import { Track, LyricLine } from "../types";
+import { Track } from "../types";
 import { Button } from "./Button/Button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, Cancel01Icon } from "@hugeicons-pro/core-solid-rounded";
-import { cn } from "../lib/utils";
-import { useCurrentTrackIndex, useQueue } from "../hooks/useService";
+import { cn, fetchLyrics } from "../lib/utils";
+import {
+    useCurrentTrackIndex,
+    usePlaylist,
+    usePlaylistDispatcher,
+    useQueue,
+} from "../hooks/useService";
 
 interface PlaylistProps {
-    playlist: Track[];
-    setPlaylist: React.Dispatch<React.SetStateAction<Track[]>>;
     playTrack: (track: Track, index: number) => Promise<void>;
     className?: string;
 }
 
 let playlistId = 0;
 
-const Playlist: React.FC<PlaylistProps> = ({ playlist, setPlaylist, playTrack, className }) => {
-    //const [current, dispatch] = useCurrentTrack();
+const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
+    const playlist = usePlaylist();
+    const setPlaylist = usePlaylistDispatcher();
     const current = useCurrentTrackIndex();
     const queue = useQueue();
 
@@ -26,74 +30,55 @@ const Playlist: React.FC<PlaylistProps> = ({ playlist, setPlaylist, playTrack, c
         fileInputRef.current?.click();
     }, []);
 
-    const fetchLyrics = useCallback(async (lyricsUrl: string): Promise<LyricLine[]> => {
-        try {
-            const response = await fetch(lyricsUrl);
-            const content = await response.text();
-            const lines = content.split("\n");
-            const lyrics: LyricLine[] = [];
-            const timeRegex = /\[(\d{2}):(\d{2})[.:](\d{2,3})\](.*)/;
-
-            for (const line of lines) {
-                const match = line.match(timeRegex);
-                if (match) {
-                    const minutes = parseInt(match[1]);
-                    const seconds = parseInt(match[2]);
-                    const milliseconds = parseInt(match[3].padEnd(3, "0"));
-                    const time = minutes * 60 + seconds + milliseconds / 1000;
-                    const text = match[4].trim();
-                    if (text) lyrics.push({ time, text });
-                }
-            }
-            return lyrics;
-        } catch (err) {
-            console.error("Failed to load lyrics:", err);
-            return [];
-        }
-    }, []);
-
     const handleFileChange = useCallback(
         async (e: React.ChangeEvent<HTMLInputElement>) => {
             const files = e.target.files;
             if (!files || files.length === 0) return;
 
-            const audioFiles: File[] = [];
-            const lyricFiles: File[] = [];
+            const audioMap = new Map<string, File>();
+            const lyricMap = new Map<string, File>();
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                if (file.name.endsWith(".lrc")) {
-                    lyricFiles.push(file);
-                } else if (file.type.startsWith("audio/")) {
-                    audioFiles.push(file);
+                const baseName = file.name.replace(/\.[^/.]+$/, "");
+                if (file.type.startsWith("audio/")) {
+                    audioMap.set(baseName, file);
+                } else if (file.name.endsWith(".lrc")) {
+                    lyricMap.set(baseName, file);
                 }
             }
 
-            const newTracks: Track[] = [];
-            for (const audioFile of audioFiles) {
-                const baseName = audioFile.name.replace(/\.[^/.]+$/, "");
-                const lyricFile = lyricFiles.find((lyric) => lyric.name === `${baseName}.lrc`);
-                const lyricsUrl = lyricFile ? URL.createObjectURL(lyricFile) : undefined;
-                const lyrics = lyricsUrl ? await fetchLyrics(lyricsUrl) : [];
+            const newTracksPromises: Promise<Track>[] = [];
 
-                const newTrack: Track = {
-                    id: playlistId++,
-                    name: audioFile.name.replace(/\.[^/.]+$/, ""),
-                    artist: "Unknown Artist",
-                    url: URL.createObjectURL(audioFile),
-                    hasLyrics: !!lyricFile,
-                    lyricsUrl,
-                    lyrics,
-                    currentLyricIndex: -1,
-                    album: "Unknown Album",
-                    file: audioFile,
-                    codec: audioFile.type,
-                };
-                newTracks.push(newTrack);
-            }
+            audioMap.forEach((audioFile, baseName) => {
+                const lyricFile = lyricMap.get(baseName);
+
+                const trackPromise = (async (): Promise<Track> => {
+                    const lyrics = lyricFile ? await fetchLyrics(lyricFile) : [];
+
+                    return {
+                        id: playlistId++,
+                        name: baseName,
+                        artist: "Unknown Artist",
+                        url: URL.createObjectURL(audioFile),
+                        hasLyrics: !!lyricFile,
+                        lyrics,
+                        album: "Unknown Album",
+                        codec: audioFile.type,
+                    };
+                })();
+
+                newTracksPromises.push(trackPromise);
+            });
+
+            // Wait for all tracks to be processed in parallel
+            const newTracks = await Promise.all(newTracksPromises);
 
             setPlaylist((prev) => [...prev, ...newTracks]);
 
-            if (fileInputRef.current) fileInputRef.current.value = "";
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         },
         [fetchLyrics]
     );
@@ -111,7 +96,7 @@ const Playlist: React.FC<PlaylistProps> = ({ playlist, setPlaylist, playTrack, c
             const queueIndex = queue.findIndex((t) => t.id === track.id);
             await playTrack(track, queueIndex);
         },
-        [playTrack, playlist, queue]
+        [playlist, queue]
     );
 
     return (

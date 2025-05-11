@@ -1,20 +1,23 @@
-import React, { useCallback, useEffect } from "react";
-import { LyricLine } from "../types";
-import { useCurrentLyricIndex, useCurrentTimeDispatcher } from "../hooks/useService";
+import React, { useCallback, useEffect, useMemo } from "react";
+import { useCurrentLyricIndex, useCurrentTimeDispatcher, useCurrentTrackIndex, useQueue } from "../hooks/useService";
+import { useAudioRef, useLyricsRef } from "../hooks/useSharedRef";
 
-interface LyricsDisplayProps {
-    lyrics: LyricLine[];
-    lyricsRef: React.RefObject<HTMLDivElement | null>;
-    audioRef: React.RefObject<HTMLAudioElement | null>;
-}
+const LyricsDisplay: React.FC = () => {
+    const lyricsRef = useLyricsRef();
+    const audioRef = useAudioRef();
 
-const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
-    lyrics,
-    lyricsRef,
-    audioRef,
-}) => {
     const currentTimeDispatcher = useCurrentTimeDispatcher();
     const currentLyricIndex = useCurrentLyricIndex();
+    const currentTrackIndex = useCurrentTrackIndex();
+    const queue = useQueue();
+
+    const lyrics = useMemo(
+        () =>
+            currentTrackIndex >= 0 && currentTrackIndex < queue.length
+                ? queue[currentTrackIndex]?.lyrics || []
+                : [],
+        [currentTrackIndex, queue.length]
+    );
 
     const handleLyricClick = (time: number) => {
         if (audioRef.current) {

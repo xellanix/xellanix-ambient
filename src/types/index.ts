@@ -9,11 +9,8 @@ export interface Track {
 	artist: string;
 	url: string;
 	hasLyrics: boolean;
-	lyricsUrl?: string;
 	lyrics: LyricLine[];
-	currentLyricIndex: number;
 	album: string;
-	file: File;
 	codec: string;
 	coverUrl?: string;
 }

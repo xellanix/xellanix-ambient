@@ -48,44 +48,38 @@ const MaximizeLyricsButton = React.memo(
     )
 );
 
-const AppContent = React.memo(
-    ({
-        playTrack,
-    }: {
-        playTrack: any;
-    }) => {
-        const [maximizeLyrics, setMaximizeLyrics] = useState<boolean>(false);
-        const [showLyrics, setShowLyrics] = useState<boolean>(true);
+const AppContent = React.memo(({ playTrack }: { playTrack: any }) => {
+    const [maximizeLyrics, setMaximizeLyrics] = useState<boolean>(false);
+    const [showLyrics, setShowLyrics] = useState<boolean>(true);
 
-        const toggleMaximizeLyrics = useCallback(() => setMaximizeLyrics((prev) => !prev), []);
-        const toggleLyrics = useCallback(() => setShowLyrics((prev) => !prev), []);
+    const toggleMaximizeLyrics = useCallback(() => setMaximizeLyrics((prev) => !prev), []);
+    const toggleLyrics = useCallback(() => setShowLyrics((prev) => !prev), []);
 
-        return (
-            <div className="flex flex-col sm:flex-row gap-4 sm:flex-1 sm:overflow-hidden max-h-full sm:pb-8">
-                {/* Lyrics (Main Content) */}
-                <div className="flex flex-col flex-1 relative group overflow-auto sm:h-full max-h-full">
-                    {showLyrics && (
-                        <>
-                            <MaximizeLyricsButton
-                                isMaximized={maximizeLyrics}
-                                onClick={toggleMaximizeLyrics}
-                            />
-                            <LyricsDisplay />
-                        </>
-                    )}
-                </div>
-
-                {!maximizeLyrics && (
-                    <SidebarMemo
-                        playTrack={playTrack}
-                        showLyrics={showLyrics}
-                        toggleLyrics={toggleLyrics}
-                    />
+    return (
+        <div className="flex flex-col sm:flex-row gap-4 sm:flex-1 sm:overflow-hidden max-h-full sm:pb-8">
+            {/* Lyrics (Main Content) */}
+            <div className="flex flex-col flex-1 relative group overflow-auto sm:h-full max-h-full">
+                {showLyrics && (
+                    <>
+                        <MaximizeLyricsButton
+                            isMaximized={maximizeLyrics}
+                            onClick={toggleMaximizeLyrics}
+                        />
+                        <LyricsDisplay />
+                    </>
                 )}
             </div>
-        );
-    }
-);
+
+            {!maximizeLyrics && (
+                <SidebarMemo
+                    playTrack={playTrack}
+                    showLyrics={showLyrics}
+                    toggleLyrics={toggleLyrics}
+                />
+            )}
+        </div>
+    );
+});
 
 const AppService: React.FC = () => {
     const lyricsRef = useLyricsRef();
@@ -134,6 +128,16 @@ const AppService: React.FC = () => {
                 await audioRef.current.load();
                 await audioRef.current.play();
                 setIsPlaying(true);
+
+                const player = document.querySelector("div.group.audio-player");
+                if (player) {
+                    setTimeout(() => {
+                        player.classList.add("expanded");
+                        setTimeout(() => {
+                            player.classList.remove("expanded");
+                        }, 3000);
+                    }, 1000);
+                }
             } catch (err) {
                 console.error("Playback error:", err);
                 setIsPlaying(false);
@@ -178,32 +182,32 @@ const AppService: React.FC = () => {
 
     return (
         <PlaylistProvider resetState={resetState}>
-        <div className="container mx-auto p-2 sm:p-4 bg-gray-100 dark:bg-gray-900 min-h-screen h-screen max-h-screen flex flex-col gap-2 sm:gap-4 overflow-auto">
-            <AppContent playTrack={playTrack} />
+            <div className="container mx-auto p-2 sm:p-4 bg-gray-100 dark:bg-gray-900 min-h-screen h-screen max-h-screen flex flex-col gap-2 sm:gap-4 overflow-auto">
+                <AppContent playTrack={playTrack} />
 
-            {/* Audio Player */}
-            <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 sm:w-40 max-w-[90%] sm:max-w-[400px]">
-                <AudioPlayerMemo
-                    loadedMetadata={loadedMetadata}
-                    handleTimeUpdate={handleTimeUpdate}
-                    handleEnded={handleEnded}
-                    islandComp={<AudioPlayerIslandMemo duration={duration} />}
-                    trackComp={<AudioPlayerTrackMemo />}
-                    controllerComp={
-                        <AudioPlayerControllerMemo
-                            isPlaying={isPlaying}
-                            setIsPlaying={setIsPlaying}
-                            loop={loop}
-                            toggleLoop={toggleLoop}
-                            handlePlay={handlePlay}
-                            playNext={playNext}
-                        />
-                    }
-                    timelineComp={<AudioPlayerTimelineMemo duration={duration} />}
-                    volumeComp={<AudioPlayerVolumeMemo />}
-                />
+                {/* Audio Player */}
+                <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 sm:w-40 max-w-[90%] sm:max-w-[400px]">
+                    <AudioPlayerMemo
+                        loadedMetadata={loadedMetadata}
+                        handleTimeUpdate={handleTimeUpdate}
+                        handleEnded={handleEnded}
+                        islandComp={<AudioPlayerIslandMemo duration={duration} />}
+                        trackComp={<AudioPlayerTrackMemo />}
+                        controllerComp={
+                            <AudioPlayerControllerMemo
+                                isPlaying={isPlaying}
+                                setIsPlaying={setIsPlaying}
+                                loop={loop}
+                                toggleLoop={toggleLoop}
+                                handlePlay={handlePlay}
+                                playNext={playNext}
+                            />
+                        }
+                        timelineComp={<AudioPlayerTimelineMemo duration={duration} />}
+                        volumeComp={<AudioPlayerVolumeMemo />}
+                    />
+                </div>
             </div>
-        </div>
         </PlaylistProvider>
     );
 };
@@ -212,7 +216,7 @@ const App: React.FC = () => {
     return (
         <SharedRefProvider>
             <ServiceProvider>
-            <AppService />
+                <AppService />
             </ServiceProvider>
         </SharedRefProvider>
     );

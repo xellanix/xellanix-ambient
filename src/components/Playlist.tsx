@@ -3,7 +3,7 @@ import { Track } from "../types";
 import { Button } from "./Button/Button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon, Cancel01Icon } from "@hugeicons-pro/core-solid-rounded";
-import { cn, fetchLyrics } from "../lib/utils";
+import { cn, extractMetadata, fetchLyrics } from "../lib/utils";
 import {
     useCurrentTrackIndex,
     usePlaylist,
@@ -12,11 +12,62 @@ import {
 } from "../hooks/useService";
 
 interface PlaylistProps {
-    playTrack: (track: Track, index: number) => Promise<void>;
+    playTrack: (track: Track, index: number, total: number) => Promise<void>;
     className?: string;
 }
 
 let playlistId = 0;
+
+const PlaylistItem = React.memo(
+    ({
+        track,
+        index,
+        currentId,
+        handlePlayTrack,
+        handleRemoveTrack,
+    }: {
+        track: Track;
+        index: number;
+        currentId: number;
+        handlePlayTrack: (index: number) => Promise<void>;
+        handleRemoveTrack: (id: number) => void;
+    }) => {
+        return (
+            <li
+                className={cn(
+                    "flex justify-between items-center p-2 rounded-lg cursor-pointer transition-colors",
+                    track.id === currentId
+                        ? "bg-gray-200 dark:bg-gray-600"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700",
+                    "not-hover:[&>.btn]:!hidden text-sm sm:text-base"
+                )}
+                onClick={() => handlePlayTrack(index)}>
+                <img src={track.coverUrl} className="size-12 mr-2 rounded-md" alt={track.name} />
+                <div
+                    className="flex-1 truncate flex flex-col">
+                    <span className="text-[var(--text-normal)] font-semibold">{track.name}</span>
+                    {track.artist && (
+                        <span className="text-xs sm:text-sm text-[var(--text-secondary)]">
+                            {track.artist}
+                        </span>
+                    )}
+                </div>
+                <Button
+                    styleType="secondary"
+                    title="Remove Track"
+                    className="size-5 sm:size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
+                    onClick={() => handleRemoveTrack(track.id)}>
+                    <HugeiconsIcon
+                        icon={Cancel01Icon}
+                        className="size-2 sm:size-3"
+                        strokeWidth={1}
+                        color="var(--text-tertiary)"
+                    />
+                </Button>
+            </li>
+        );
+    }
+);
 
 const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
     const playlist = usePlaylist();
@@ -55,16 +106,17 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
 
                 const trackPromise = (async (): Promise<Track> => {
                     const lyrics = lyricFile ? await fetchLyrics(lyricFile) : [];
+                    const metadata = await extractMetadata(audioFile);
 
                     return {
                         id: playlistId++,
-                        name: baseName,
-                        artist: "Unknown Artist",
+                        name: metadata.title,
+                        artist: metadata.performer,
                         url: URL.createObjectURL(audioFile),
                         hasLyrics: !!lyricFile,
                         lyrics,
-                        album: "Unknown Album",
-                        codec: audioFile.type,
+                        codec: metadata.audioQuality,
+                        coverUrl: metadata.coverData,
                     };
                 })();
 
@@ -72,7 +124,7 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
             });
 
             // Wait for all tracks to be processed in parallel
-            const newTracks = await Promise.all(newTracksPromises);
+            const newTracks = await Promise.all(newTracksPromises);;
 
             setPlaylist((prev) => [...prev, ...newTracks]);
 
@@ -94,7 +146,7 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
         async (index: number) => {
             const track = playlist[index];
             const queueIndex = queue.findIndex((t) => t.id === track.id);
-            await playTrack(track, queueIndex);
+            await playTrack(track, queueIndex, queue.length);
         },
         [playlist, queue]
     );
@@ -126,43 +178,14 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
             <div className="flex-1 overflow-auto">
                 <ul className="space-y-1 sm:space-y-2">
                     {playlist.map((track, index) => (
-                        <li
+                        <PlaylistItem
                             key={index}
-                            className={cn(
-                                "flex justify-between items-center p-2 rounded-lg",
-                                track.id === queue[current]?.id
-                                    ? "bg-blue-100 dark:bg-blue-900"
-                                    : "hover:bg-gray-100 dark:hover:bg-gray-700",
-                                "hover:[&>.btn]:visible text-sm sm:text-base"
-                            )}>
-                            <div
-                                className="flex-1 cursor-pointer truncate"
-                                onClick={() => handlePlayTrack(index)}>
-                                <span className="text-[var(--text-normal)]">{track.name}</span>
-                                {track.artist && (
-                                    <span className="text-xs sm:text-sm text-[var(--text-secondary)] ml-1 sm:ml-2">
-                                        - {track.artist}
-                                    </span>
-                                )}
-                                {track.codec && (
-                                    <span className="text-xs sm:text-sm text-[var(--text-tertiary)] ml-1 sm:ml-2">
-                                        ({track.codec})
-                                    </span>
-                                )}
-                            </div>
-                            <Button
-                                styleType="secondary"
-                                title="Remove Track"
-                                className="invisible size-5 sm:size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                                onClick={() => handleRemoveTrack(track.id)}>
-                                <HugeiconsIcon
-                                    icon={Cancel01Icon}
-                                    className="size-2 sm:size-3"
-                                    strokeWidth={1}
-                                    color="var(--text-tertiary)"
-                                />
-                            </Button>
-                        </li>
+                            track={track}
+                            index={index}
+                            currentId={queue[current]?.id}
+                            handlePlayTrack={handlePlayTrack}
+                            handleRemoveTrack={handleRemoveTrack}
+                        />
                     ))}
                 </ul>
             </div>

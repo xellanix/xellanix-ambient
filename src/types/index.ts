@@ -10,7 +10,6 @@ export interface Track {
 	url: string;
 	hasLyrics: boolean;
 	lyrics: LyricLine[];
-	album: string;
 	codec: string;
 	coverUrl?: string;
 }

@@ -79,7 +79,8 @@ const AudioPlayerIsland: React.FC<{ duration: number }> = ({ duration }) => {
         <div
             className={cn(
                 "absolute inset-0 bg-[var(--bg-accent)] transition-colors -z-50 rounded-2xl",
-                "group-hover:bg-[var(--bg-primary)] duration-700 ease-in-out"
+                "group-hover:bg-[var(--bg-primary)] duration-700 ease-in-out",
+                "group-[&.expanded]:bg-[var(--bg-primary)]"
             )}
             style={style}
         />
@@ -106,7 +107,7 @@ const AudioPlayerTrack: React.FC = () => {
 
     return (
         <div className="flex items-center gap-3 flex-1 min-w-0 h-full">
-            <div className="w-12 h-12 rounded-xl shrink-0" style={coverStyle}></div>
+            <div className="w-12 h-12 rounded-md shrink-0" style={coverStyle}></div>
             <div className="truncate">
                 <h2 className="text-[var(--text-normal)] text-base font-semibold m-0 truncate">
                     {isTrackSelected ? queue[current]?.name : "No track selected"}
@@ -369,7 +370,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 `group audio-player relative shadow-md w-40 h-4 rounded-2xl overflow-hidden left-1/2 transform -translate-x-1/2`,
                 "bg-[var(--bg-tertiary)]",
                 "transition-[width,height,background] duration-700 ease-in-out",
-                "hover:bg-[var(--bg-primary)] hover:w-[calc(100vw-theme(spacing.4)*2)] hover:h-48 hover:md:h-24"
+                "hover:bg-[var(--bg-primary)] hover:w-[calc(100vw-theme(spacing.4)*2)] hover:h-48 hover:md:h-24",
+                "[&.expanded]:bg-[var(--bg-primary)] [&.expanded]:w-[calc(100vw-theme(spacing.4)*2)] [&.expanded]:h-48 [&.expanded]:md:h-24",
             )}
             style={{ transformOrigin: "center bottom" }}>
             {islandComp}
@@ -380,7 +382,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 onLoadedMetadata={loadedMetadata}
             />
             <div
-                className={`opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out w-full h-full p-4 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-none group-hover:pointer-events-auto`}>
+                className={`opacity-0 group-hover:opacity-100 group-[&.expanded]:opacity-100 transition-opacity duration-500 ease-in-out w-full h-full p-4 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-none group-hover:pointer-events-auto group-[&.expanded]:pointer-events-auto`}>
                 {trackComp}
 
                 <div className="flex flex-col items-center gap-3 w-[80%] md:w-[40%] max-w-md h-full justify-center">

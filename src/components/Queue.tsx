@@ -3,7 +3,7 @@ import { Track } from "../types";
 import { useCurrentTrackIndex, useQueue } from "../hooks/useService";
 
 interface QueueProps {
-    playTrack: (track: Track, index: number) => Promise<void>;
+    playTrack: (track: Track, index: number, total: number) => Promise<void>;
     className?: string;
 }
 
@@ -14,7 +14,7 @@ const Queue: React.FC<QueueProps> = ({ playTrack, className }) => {
     const changeTrack = useCallback(
         async (index: number) => {
             const track = queue[index];
-            await playTrack(track, index);
+            await playTrack(track, index, queue.length);
         },
         [queue, playTrack]
     );
@@ -56,14 +56,20 @@ const Queue: React.FC<QueueProps> = ({ playTrack, className }) => {
                                     : "hover:bg-gray-100 dark:hover:bg-gray-700"
                             } text-sm sm:text-base`}
                             onClick={() => changeTrack(index)}>
-                            <div className="flex items-center text-[var(--text-normal)]">
-                                {track.hasLyrics && <span className="mr-1 sm:mr-2">🎵</span>}
-                                <span>{track.name}</span>
-                            </div>
-                            <div className="flex items-center space-x-1 sm:space-x-2">
-                                <span className="text-xs sm:text-sm text-[var(--text-tertiary)]">
-                                    {track.codec}
+                            <img
+                                src={track.coverUrl}
+                                className="size-12 mr-2 rounded-md"
+                                alt={track.name}
+                            />
+                            <div className="flex-1 truncate flex flex-col">
+                                <span className="text-[var(--text-normal)] font-semibold">
+                                    {track.name}
                                 </span>
+                                {track.artist && (
+                                    <span className="text-xs sm:text-sm text-[var(--text-secondary)]">
+                                        {track.artist}
+                                    </span>
+                                )}
                             </div>
                         </li>
                     ))}

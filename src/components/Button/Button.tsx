@@ -1,7 +1,7 @@
 import { cn } from "../../lib/utils";
 import "./style.css";
 
-type ButtonOverride<T> = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, keyof T> & T;
+type ButtonOverride<T> = Omit<React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>, keyof T> & T;
 
 interface IButtonClassNames {
     base?: string;

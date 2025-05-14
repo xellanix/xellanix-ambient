@@ -14,6 +14,7 @@ import { SidebarMemo } from "./components/Sidebar";
 import { Button } from "./components/Button/Button";
 import {
     PlaylistProvider,
+    SelectedTrackProvider,
     ServiceProvider,
     useCurrentLyricIndexDispatcher,
     useCurrentTimeDispatcher,
@@ -23,6 +24,7 @@ import {
 } from "./hooks/useService";
 import AudioPlayerMemo from "./components/AudioPlayer";
 import { SharedRefProvider, useAudioRef, useLyricsRef } from "./hooks/useSharedRef";
+import { TrackGlance } from "./components/TrackGlance";
 
 const getLoopMode = () =>
     (window.localStorage.getItem("loopMode") as "none" | "track" | "playlist") || "none";
@@ -57,10 +59,10 @@ const AppContent = React.memo(({ playTrack }: { playTrack: any }) => {
 
     return (
         <div className="flex flex-col sm:flex-row gap-4 sm:flex-1 sm:overflow-hidden max-h-full sm:pb-8">
-            {/* Lyrics (Main Content) */}
             <div className="flex flex-col flex-1 relative group overflow-auto sm:h-full max-h-full">
                 {showLyrics && (
                     <>
+                        <TrackGlance />
                         <MaximizeLyricsButton
                             isMaximized={maximizeLyrics}
                             onClick={toggleMaximizeLyrics}
@@ -117,7 +119,8 @@ const AppService: React.FC = () => {
         setCurrentTrackIndex(index);
         setCurrentTime(0);
         setCurrentLyricIndex(-1);
-        if (lyricsRef.current) lyricsRef.current.scrollTop = 0;
+
+        setTimeout(() => lyricsRef.current && (lyricsRef.current.scrollTop = 0), 10);
 
         if (audioRef.current) {
             audioRef.current.pause();
@@ -125,7 +128,7 @@ const AppService: React.FC = () => {
             audioRef.current.currentTime = 0;
             audioRef.current.src = track.url;
             try {
-                await audioRef.current.load();
+                audioRef.current.load();
                 await audioRef.current.play();
                 setIsPlaying(true);
 
@@ -133,9 +136,7 @@ const AppService: React.FC = () => {
                 if (player) {
                     setTimeout(() => {
                         player.classList.add("expanded");
-                        setTimeout(() => {
-                            player.classList.remove("expanded");
-                        }, 3000);
+                        setTimeout(() => player.classList.remove("expanded"), 3000);
                     }, 1000);
                 }
             } catch (err) {
@@ -156,7 +157,10 @@ const AppService: React.FC = () => {
     }, []);
 
     const handlePlay = useCallback(
-        async (newIndex: number) => await playTrack(queue[newIndex], newIndex, queue.length),
+        async (newIndex: number) => {
+            console.log(queue.length, newIndex);
+            await playTrack(queue[newIndex], newIndex, queue.length)
+        },
         [queue]
     );
 
@@ -216,7 +220,9 @@ const App: React.FC = () => {
     return (
         <SharedRefProvider>
             <ServiceProvider>
-                <AppService />
+                <SelectedTrackProvider>
+                    <AppService />
+                </SelectedTrackProvider>
             </ServiceProvider>
         </SharedRefProvider>
     );

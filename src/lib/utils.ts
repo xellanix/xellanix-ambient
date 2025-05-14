@@ -38,6 +38,28 @@ export function binarySearch(array: Track[], id: number): number {
 	return -1;
 }
 
+export function findLyricIndex(lyrics: LyricLine[], currentTime: number): number {
+	let low = 0;
+	let high = lyrics.length - 1;
+	let result = -1;
+
+	while (low <= high) {
+		const mid = Math.floor((low + high) / 2);
+		const lyric = lyrics[mid];
+		const nextTime = lyrics[mid + 1]?.time ?? Infinity;
+
+		if (currentTime >= lyric.time && currentTime < nextTime) {
+			return mid;
+		} else if (currentTime < lyric.time) {
+			high = mid - 1;
+		} else {
+			low = mid + 1;
+		}
+	}
+
+	return result; // No match found
+}
+
 /**
  * Helper function to shuffle an array using the Fisher-Yates shuffle algorithm
  * @param array Array to shuffle

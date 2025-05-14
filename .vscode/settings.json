@@ -1,3 +1,4 @@
 {
-    "workbench.colorTheme": "Monokai Pro (Filter Machine)"
+    "workbench.colorTheme": "Monokai Pro (Filter Machine)",
+    "tailwindCSS.experimental.configFile": "src/index.css"
 }

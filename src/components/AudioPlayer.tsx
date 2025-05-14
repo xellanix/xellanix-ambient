@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import Slider, { SliderInput, useSlider } from "./Slider/Slider";
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react";
 import {
@@ -19,6 +19,7 @@ import {
     useCurrentTimeDispatcher,
     useCurrentTrackIndex,
     useQueue,
+    useSelectedTrack,
     useShuffle,
     useShuffleDispatcher,
 } from "../hooks/useService";
@@ -80,7 +81,7 @@ const AudioPlayerIsland: React.FC<{ duration: number }> = ({ duration }) => {
             className={cn(
                 "absolute inset-0 bg-[var(--bg-accent)] transition-colors -z-50 rounded-2xl",
                 "group-hover:bg-[var(--bg-primary)] duration-700 ease-in-out",
-                "group-[&.expanded]:bg-[var(--bg-primary)]"
+                "group-[.expanded]:bg-[var(--bg-primary)]"
             )}
             style={style}
         />
@@ -88,21 +89,15 @@ const AudioPlayerIsland: React.FC<{ duration: number }> = ({ duration }) => {
 };
 
 const AudioPlayerTrack: React.FC = () => {
-    const current = useCurrentTrackIndex();
-    const queue = useQueue();
-
-    const isTrackSelected = useMemo(
-        () => current >= 0 && current < queue.length,
-        [current, queue.length]
-    );
+    const selectedTrack = useSelectedTrack();
 
     const coverStyle = useMemo(
         () => ({
-            background: queue[current]?.coverUrl
-                ? `url(${queue[current].coverUrl}) center/cover`
+            background: selectedTrack?.coverUrl
+                ? `url(${selectedTrack.coverUrl}) center/cover`
                 : "var(--bg-tertiary)",
         }),
-        [current, queue]
+        [selectedTrack]
     );
 
     return (
@@ -110,11 +105,11 @@ const AudioPlayerTrack: React.FC = () => {
             <div className="w-12 h-12 rounded-md shrink-0" style={coverStyle}></div>
             <div className="truncate">
                 <h2 className="text-[var(--text-normal)] text-base font-semibold m-0 truncate">
-                    {isTrackSelected ? queue[current]?.name : "No track selected"}
+                    {selectedTrack ? selectedTrack?.name : "No track selected"}
                 </h2>
-                {isTrackSelected && queue[current]?.artist && (
+                {selectedTrack && selectedTrack?.artist && (
                     <p className="text-[var(--text-secondary)] text-xs m-0 truncate">
-                        {queue[current].artist}
+                        {selectedTrack.artist}
                     </p>
                 )}
             </div>
@@ -131,6 +126,7 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
     playNext,
 }) => {
     const audioRef = useAudioRef();
+    const playButtonRef = useRef<HTMLButtonElement>(null);
 
     const current = useCurrentTrackIndex();
     const queue = useQueue();
@@ -180,6 +176,37 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
         [current, loop, queue.length]
     );
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.code !== "KeyK") return;
+            
+            const active = document.activeElement as HTMLElement | null;
+            const focusedTag = active?.tagName ?? "";
+            const isTextField =
+                focusedTag === "INPUT" ||
+                focusedTag === "TEXTAREA" ||
+                active?.getAttribute("contenteditable") === "true";
+
+            if (isTextField) return; // Allow native behavior
+
+            const button = playButtonRef.current;
+            if (!button) return;
+
+            if (button.disabled) {
+                e.preventDefault();
+                if (canPlayNext) {
+                    playNext();
+                }
+            } else {
+                e.preventDefault();
+                togglePlay();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [canPlayNext, togglePlay]);
+
     return (
         <>
             <Button
@@ -191,11 +218,13 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
                 <MemoHugeiconsIcon icon={PreviousIcon} className="size-3" strokeWidth={0} />
             </Button>
             <Button
+                ref={playButtonRef}
                 styleType="primary"
                 onClick={togglePlay}
                 className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                 disabled={!isTrackSelected}
-                title={isPlaying ? "Pause" : "Play"}>
+                title={isPlaying ? "Pause" : "Play"}
+                tabIndex={0}>
                 <MemoHugeiconsIcon
                     icon={PlayIcon}
                     altIcon={PauseIcon}
@@ -296,6 +325,7 @@ const AudioPlayerVolume: React.FC = () => {
     const handleVolumeChange = useCallback((newVolume: number) => {
         const clampedVolume = Math.max(0, Math.min(100, newVolume));
         window.localStorage.setItem("volume", clampedVolume.toString());
+        window.localStorage.setItem("isMuted", clampedVolume !== 0 ? "1" : "0");
         setVolume(clampedVolume);
         if (audioRef.current) {
             audioRef.current.volume = clampedVolume / 100;
@@ -371,7 +401,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 "bg-[var(--bg-tertiary)]",
                 "transition-[width,height,background] duration-700 ease-in-out",
                 "hover:bg-[var(--bg-primary)] hover:w-[calc(100vw-theme(spacing.4)*2)] hover:h-48 hover:md:h-24",
-                "[&.expanded]:bg-[var(--bg-primary)] [&.expanded]:w-[calc(100vw-theme(spacing.4)*2)] [&.expanded]:h-48 [&.expanded]:md:h-24",
+                "[&.expanded]:bg-[var(--bg-primary)] [&.expanded]:w-[calc(100vw-theme(spacing.4)*2)] [&.expanded]:h-48 [&.expanded]:md:h-24"
             )}
             style={{ transformOrigin: "center bottom" }}>
             {islandComp}
@@ -382,7 +412,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 onLoadedMetadata={loadedMetadata}
             />
             <div
-                className={`opacity-0 group-hover:opacity-100 group-[&.expanded]:opacity-100 transition-opacity duration-500 ease-in-out w-full h-full p-4 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-none group-hover:pointer-events-auto group-[&.expanded]:pointer-events-auto`}>
+                className={`opacity-0 group-hover:opacity-100 group-[.expanded]:opacity-100 transition-opacity duration-500 ease-in-out w-full h-full p-4 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-none group-hover:pointer-events-auto group-[.expanded]:pointer-events-auto`}>
                 {trackComp}
 
                 <div className="flex flex-col items-center gap-3 w-[80%] md:w-[40%] max-w-md h-full justify-center">

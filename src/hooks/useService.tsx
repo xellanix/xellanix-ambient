@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Track } from "../types";
-import { useLyricsRef } from "./useSharedRef";
-import { binarySearch, shuffleArray } from "../lib/utils";
+import { useGlanceRef, useLyricsRef } from "./useSharedRef";
+import { binarySearch, findLyricIndex, shuffleArray } from "../lib/utils";
 
 interface ServiceProviderProps {
     children: React.ReactNode;
@@ -28,8 +28,11 @@ const ShuffleContext = createContext<boolean>(false);
 const PlaylistDispatcherContext = createContext<DispatchContext<Track[]>>(() => {});
 const ShuffleDispatcherContext = createContext<DispatchContext<boolean>>(() => {});
 
+const SelectedTrackContext = createContext<Track | null>(null);
+
 const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
     const lyricsRef = useLyricsRef();
+    const glanceRef = useGlanceRef();
 
     const [queue, setQueue] = useState<Track[]>([]);
     const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(-1);
@@ -47,13 +50,22 @@ const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
         if (!track?.lyrics?.length) {
             setCurrentLyricIndex(-1);
             if (lyricsRef.current) lyricsRef.current.scrollTop = 0;
+            glanceRef.current?.classList.toggle("glance", true);
             return;
         }
 
-        const index = track.lyrics.findIndex((lyric, i) => {
-            const nextTime = track.lyrics[i + 1]?.time || Infinity;
-            return currentTime >= lyric.time && currentTime < nextTime;
-        });
+        const index = findLyricIndex(track.lyrics, currentTime);
+
+        const timeInt = Math.trunc(currentTime);
+        const lyricInt = Math.trunc(track.lyrics[0]?.time - 3);
+        if (timeInt === lyricInt || (currentLyricIndex >= 0 && index !== currentLyricIndex)) {
+            glanceRef.current?.classList.toggle("glance", false);
+            glanceRef.current?.classList.toggle("lyrics", true);
+        }
+        else if (currentLyricIndex < 0 && timeInt < lyricInt) {
+            glanceRef.current?.classList.toggle("glance", true);
+            glanceRef.current?.classList.toggle("lyrics", false);
+        }
 
         if (index !== currentLyricIndex) {
             setCurrentLyricIndex(index);
@@ -141,6 +153,25 @@ const PlaylistProvider = React.memo(
         );
     }
 );
+
+const SelectedTrackProvider = React.memo(({ children }: { children: React.ReactNode }) => {
+    const current = useCurrentTrackIndex();
+    const queue = useQueue();
+
+    const selectedTrack = useMemo(() => {
+        if (current >= 0 && current < queue.length) {
+            return queue[current];
+        }
+
+        return null;
+    }, [current, queue]);
+
+    return (
+        <SelectedTrackContext.Provider value={selectedTrack}>
+            {children}
+        </SelectedTrackContext.Provider>
+    );
+});
 
 const useQueue = () => {
     const value = useContext(QueueContext);
@@ -256,9 +287,16 @@ const useShuffleDispatcher = () => {
     return value;
 };
 
+const useSelectedTrack = () => {
+    const value = useContext(SelectedTrackContext);
+
+    return value;
+}
+
 export {
     ServiceProvider,
     PlaylistProvider,
+    SelectedTrackProvider,
     useQueue,
     useCurrentTrackIndex,
     useCurrentLyricIndex,
@@ -270,5 +308,6 @@ export {
     usePlaylist,
     usePlaylistDispatcher,
     useShuffle,
-    useShuffleDispatcher
+    useShuffleDispatcher,
+    useSelectedTrack
 };

@@ -13,7 +13,7 @@ An simple music player with focus on lyrics display.
 - [x] (04/26/2025 - v0.4.0) Add shuffle and loop control
 - [x] (04/26/2025 - v0.4.0) Add volume control
 - [ ] Add PWA support
-- [-] (05/12/2025 - 0.7.0) Improve other UI/UX*
+- [-] (05/12/2025 - 0.7.1) Improve other UI/UX*
 - [x] (05/11/2025 - 0.6.3) Save volume level, shuffle, loop, dark mode
 - [-] (05/15/2025 - 0.7.0) Keyboard shortcuts
 

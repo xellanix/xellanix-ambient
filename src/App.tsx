@@ -62,6 +62,14 @@ const AppContent = React.memo(({ playTrack }: { playTrack: any }) => {
             <div className="flex flex-col flex-1 relative group overflow-auto sm:h-full max-h-full">
                 {showLyrics && (
                     <>
+                        <div className="@container absolute size-full flex justify-center items-center">
+                            <div className="flex items-center gap-2">
+                                <img src="./icon-sq.svg" alt="Xellanix icon" className="@sm:size-12 size-10" />
+                                <h1 className="text-2xl @sm:text-4xl font-bold text-[var(--text-normal)]">
+                                    Ambient
+                                </h1>
+                            </div>
+                        </div>
                         <TrackGlance />
                         <MaximizeLyricsButton
                             isMaximized={maximizeLyrics}
@@ -159,7 +167,7 @@ const AppService: React.FC = () => {
     const handlePlay = useCallback(
         async (newIndex: number) => {
             console.log(queue.length, newIndex);
-            await playTrack(queue[newIndex], newIndex, queue.length)
+            await playTrack(queue[newIndex], newIndex, queue.length);
         },
         [queue]
     );

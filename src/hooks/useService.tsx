@@ -61,10 +61,14 @@ const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
         if (timeInt === lyricInt || (currentLyricIndex >= 0 && index !== currentLyricIndex)) {
             glanceRef.current?.classList.toggle("glance", false);
             glanceRef.current?.classList.toggle("lyrics", true);
+            glanceRef.current?.classList.toggle("lyrics-bg", true);
         }
         else if (currentLyricIndex < 0 && timeInt < lyricInt) {
             glanceRef.current?.classList.toggle("glance", true);
             glanceRef.current?.classList.toggle("lyrics", false);
+        } else if (timeInt === 0) {
+            glanceRef.current?.classList.toggle("glance", true);
+            glanceRef.current?.classList.toggle("lyrics", true);
         }
 
         if (index !== currentLyricIndex) {

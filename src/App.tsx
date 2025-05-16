@@ -23,7 +23,7 @@ import {
     useQueue,
 } from "./hooks/useService";
 import AudioPlayerMemo from "./components/AudioPlayer";
-import { SharedRefProvider, useAudioRef, useLyricsRef } from "./hooks/useSharedRef";
+import { SharedRefProvider, useAudioRef, useGlanceRef, useLyricsRef } from "./hooks/useSharedRef";
 import { TrackGlance } from "./components/TrackGlance";
 
 const getLoopMode = () =>
@@ -71,6 +71,7 @@ const AppContent = React.memo(({ playTrack }: { playTrack: any }) => {
                             </div>
                         </div>
                         <TrackGlance />
+                        <div className="bg-gray-100 dark:bg-gray-900 absolute size-full peer-[.lyrics-bg]:opacity-100 peer-[.lyrics-bg]:z-0 -z-10" />
                         <MaximizeLyricsButton
                             isMaximized={maximizeLyrics}
                             onClick={toggleMaximizeLyrics}
@@ -103,6 +104,7 @@ const AppService: React.FC = () => {
     const [duration, setDuration] = useState<number>(0);
     const [loop, setLoop] = useState<"none" | "track" | "playlist">(getLoopMode);
     const audioRef = useAudioRef();
+    const glanceRef = useGlanceRef();
 
     const toggleLoop = useCallback(() => {
         setLoop((prev) => {
@@ -162,6 +164,8 @@ const AppService: React.FC = () => {
         if (audioRef.current) {
             audioRef.current.src = "";
         }
+        glanceRef.current?.classList.toggle("lyrics-bg", false);
+        glanceRef.current?.classList.toggle("lyrics", false);
     }, []);
 
     const handlePlay = useCallback(

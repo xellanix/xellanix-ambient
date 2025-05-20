@@ -7,7 +7,7 @@ import {
     SpeechToTextIcon,
     Sun03Icon,
 } from "@hugeicons-pro/core-solid-rounded";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import SliderRadioButton, { SliderOption } from "./SlideRadioButton";
 import Playlist from "./Playlist";
 import Queue from "./Queue";
@@ -44,7 +44,7 @@ const LyricsDisplayToggle = React.memo(({ showLyrics, toggleLyrics }: LyricsDisp
             styleType={showLyrics ? "accent" : "secondary"}
             onClick={toggleLyrics}
             className="w-8 h-7.5 [--button-p:theme(padding.2)]"
-            title={showLyrics ? "Hide Lyrics" : "Show Lyrics"}>
+            title="Show/Hide Lyrics (C)">
             <MemoHugeiconsIcon icon={SpeechToTextIcon} />
         </Button>
     );
@@ -54,7 +54,7 @@ const getTheme = () => {
     const isDark = window.localStorage.getItem("theme") === "dark";
     document.documentElement.classList.toggle("dark", isDark);
     return isDark;
-}
+};
 const HeaderMemo = React.memo(() => {
     const [darkMode, setDarkMode] = useState<boolean>(getTheme);
 
@@ -65,6 +65,32 @@ const HeaderMemo = React.memo(() => {
             window.localStorage.setItem("theme", isDark ? "dark" : "light");
             return isDark;
         });
+    }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const active = document.activeElement as HTMLElement | null;
+            const focusedTag = active?.tagName ?? "";
+            const isTextField =
+                focusedTag === "INPUT" ||
+                focusedTag === "TEXTAREA" ||
+                active?.getAttribute("contenteditable") === "true";
+
+            if (isTextField) return; // Allow native behavior
+
+            switch (e.code) {
+                case "KeyD": {
+                    e.preventDefault();
+                    toggleDarkMode();
+                    break;
+                }
+                default:
+                    break;
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
     return (
@@ -81,7 +107,7 @@ const HeaderMemo = React.memo(() => {
                         styleType="secondary"
                         onClick={toggleDarkMode}
                         className="w-8 h-7.5 [--button-p:theme(padding.2)]"
-                        title={darkMode ? "Light Mode" : "Dark Mode"}>
+                        title="Light/Dark Mode (D)">
                         <HugeiconsIcon
                             icon={Moon02Icon}
                             altIcon={Sun03Icon}
@@ -119,8 +145,34 @@ const SidebarMemo = React.memo(
             }
         }, []);
 
+        useEffect(() => {
+            const handleKeyDown = (e: KeyboardEvent) => {
+                const active = document.activeElement as HTMLElement | null;
+                const focusedTag = active?.tagName ?? "";
+                const isTextField =
+                    focusedTag === "INPUT" ||
+                    focusedTag === "TEXTAREA" ||
+                    active?.getAttribute("contenteditable") === "true";
+
+                if (isTextField) return; // Allow native behavior
+
+                switch (e.code) {
+                    case "KeyC": {
+                        e.preventDefault();
+                        toggleLyrics();
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            };
+
+            window.addEventListener("keydown", handleKeyDown);
+            return () => window.removeEventListener("keydown", handleKeyDown);
+        }, []);
+
         return (
-            <div className="w-full sm:w-1/4 sm:min-w-[300px] flex flex-col not-sm:pb-10">
+            <div className="w-full sm:w-1/4 sm:min-w-[300px] flex flex-col not-sm:pb-10 sm:pb-8">
                 <div className="flex-1 bg-[var(--bg-primary)] p-4 rounded-lg flex flex-col gap-4 h-full max-h-[50dvh] sm:max-h-full">
                     <HeaderMemo />
                     {/* Content Area */}

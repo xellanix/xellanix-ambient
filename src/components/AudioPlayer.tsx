@@ -178,8 +178,6 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.code !== "KeyK") return;
-            
             const active = document.activeElement as HTMLElement | null;
             const focusedTag = active?.tagName ?? "";
             const isTextField =
@@ -189,32 +187,61 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
 
             if (isTextField) return; // Allow native behavior
 
-            const button = playButtonRef.current;
-            if (!button) return;
+            switch (e.code) {
+                case "KeyK": {
+                    const button = playButtonRef.current;
+                    if (!button) return;
 
-            if (button.disabled) {
-                e.preventDefault();
-                if (canPlayNext) {
-                    playNext();
+                    e.preventDefault();
+                    if (button.disabled) {
+                        if (canPlayNext) playNext();
+                    } else togglePlay();
+                    break;
                 }
-            } else {
-                e.preventDefault();
-                togglePlay();
+                case "KeyS": {
+                    e.preventDefault();
+                    toggleShuffle();
+                    break;
+                }
+                case "KeyL": {
+                    e.preventDefault();
+                    toggleLoop();
+                    break;
+                }
+                case "KeyN": {
+                    e.preventDefault();
+                    if (canPlayNext) playNext();
+                    break;
+                }
+                case "KeyP": {
+                    e.preventDefault();
+                    if (canPlayPrevious) playPrevious();
+                    break;
+                }
+                default:
+                    break;
             }
         };
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [canPlayNext, togglePlay]);
+    }, [canPlayNext, canPlayPrevious, togglePlay]);
 
     return (
         <>
+            <Button
+                styleType={shuffle ? "accent" : "primary"}
+                onClick={toggleShuffle}
+                className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
+                title="Enable/Disable Shuffle (S)">
+                <MemoHugeiconsIcon icon={ShuffleIcon} className="size-3" strokeWidth={1} />
+            </Button>
             <Button
                 styleType="primary"
                 onClick={playPrevious}
                 className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                 disabled={!canPlayPrevious}
-                title="Previous Track">
+                title="Previous Track (P)">
                 <MemoHugeiconsIcon icon={PreviousIcon} className="size-3" strokeWidth={0} />
             </Button>
             <Button
@@ -223,7 +250,7 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
                 onClick={togglePlay}
                 className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                 disabled={!isTrackSelected}
-                title={isPlaying ? "Pause" : "Play"}
+                title={"Play/Pause (K)"}
                 tabIndex={0}>
                 <MemoHugeiconsIcon
                     icon={PlayIcon}
@@ -238,27 +265,14 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
                 onClick={playNext}
                 className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
                 disabled={!canPlayNext}
-                title="Next Track">
+                title="Next Track (N)">
                 <MemoHugeiconsIcon icon={NextIcon} className="size-3" strokeWidth={0} />
-            </Button>
-            <Button
-                styleType={shuffle ? "accent" : "primary"}
-                onClick={toggleShuffle}
-                className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                title={shuffle ? "Disable Shuffle" : "Enable Shuffle"}>
-                <MemoHugeiconsIcon icon={ShuffleIcon} className="size-3" strokeWidth={1} />
             </Button>
             <Button
                 styleType={loop !== "none" ? "accent" : "primary"}
                 onClick={toggleLoop}
                 className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                title={
-                    loop === "none"
-                        ? "Loop Track"
-                        : loop === "track"
-                        ? "Loop Playlist"
-                        : "Disable Loop"
-                }>
+                title="Loop Track/Playlist/None (L)">
                 <MemoHugeiconsIcon
                     icon={RepeatIcon}
                     altIcon={RepeatOne01Icon}

@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useEffect } from "react";
 import { Track } from "../types";
 import { Button } from "./Button/Button";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -43,8 +43,7 @@ const PlaylistItem = React.memo(
                 )}
                 onClick={() => handlePlayTrack(index)}>
                 <img src={track.coverUrl} className="size-12 mr-2 rounded-md" alt={track.name} />
-                <div
-                    className="flex-1 truncate flex flex-col">
+                <div className="flex-1 truncate flex flex-col">
                     <span className="text-[var(--text-normal)] font-semibold">{track.name}</span>
                     {track.artist && (
                         <span className="text-xs sm:text-sm text-[var(--text-secondary)]">
@@ -77,9 +76,7 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleAddTrack = useCallback(() => {
-        fileInputRef.current?.click();
-    }, []);
+    const handleAddTrack = useCallback(() => fileInputRef.current?.click(), []);
 
     const handleFileChange = useCallback(
         async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,7 +121,7 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
             });
 
             // Wait for all tracks to be processed in parallel
-            const newTracks = await Promise.all(newTracksPromises);;
+            const newTracks = await Promise.all(newTracksPromises);
 
             setPlaylist((prev) => [...prev, ...newTracks]);
 
@@ -151,6 +148,32 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
         [playlist, queue]
     );
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const active = document.activeElement as HTMLElement | null;
+            const focusedTag = active?.tagName ?? "";
+            const isTextField =
+                focusedTag === "INPUT" ||
+                focusedTag === "TEXTAREA" ||
+                active?.getAttribute("contenteditable") === "true";
+
+            if (isTextField) return; // Allow native behavior
+
+            switch (e.code) {
+                case "KeyA": {
+                    e.preventDefault();
+                    handleAddTrack();
+                    break;
+                }
+                default:
+                    break;
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
     return (
         <div className={className}>
             <div className="flex flex-row mb-2 sm:mb-4 items-center">
@@ -162,7 +185,7 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
                         styleType="accent"
                         onClick={handleAddTrack}
                         className="w-8 h-7.5 [--button-p:theme(padding.2)]"
-                        title="Add Track">
+                        title="Add Track (A)">
                         <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={0} />
                     </Button>
                     <input

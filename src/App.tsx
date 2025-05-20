@@ -58,13 +58,17 @@ const AppContent = React.memo(({ playTrack }: { playTrack: any }) => {
     const toggleLyrics = useCallback(() => setShowLyrics((prev) => !prev), []);
 
     return (
-        <div className="flex flex-col sm:flex-row gap-4 sm:flex-1 sm:overflow-hidden max-h-full sm:pb-8">
-            <div className="flex flex-col flex-1 relative group overflow-auto sm:h-full max-h-full">
+        <div className="flex flex-col sm:flex-row gap-4 sm:flex-1 sm:overflow-hidden max-h-full">
+            <div className="@container/main flex flex-col flex-1 relative group overflow-auto sm:h-full max-h-full">
                 {showLyrics && (
                     <>
                         <div className="@container absolute size-full flex justify-center items-center">
                             <div className="flex items-center gap-2">
-                                <img src="./icon-sq.svg" alt="Xellanix icon" className="@sm:size-12 size-10" />
+                                <img
+                                    src="./icon-sq.svg"
+                                    alt="Xellanix icon"
+                                    className="@sm:size-12 size-10"
+                                />
                                 <h1 className="text-2xl @sm:text-4xl font-bold text-[var(--text-normal)]">
                                     Ambient
                                 </h1>
@@ -169,10 +173,7 @@ const AppService: React.FC = () => {
     }, []);
 
     const handlePlay = useCallback(
-        async (newIndex: number) => {
-            console.log(queue.length, newIndex);
-            await playTrack(queue[newIndex], newIndex, queue.length);
-        },
+        async (newIndex: number) => await playTrack(queue[newIndex], newIndex, queue.length),
         [queue]
     );
 
@@ -198,7 +199,7 @@ const AppService: React.FC = () => {
 
     return (
         <PlaylistProvider resetState={resetState}>
-            <div className="container mx-auto p-2 sm:p-4 bg-gray-100 dark:bg-gray-900 min-h-screen h-screen max-h-screen flex flex-col gap-2 sm:gap-4 overflow-auto">
+            <div className="mx-auto p-2 sm:p-4 bg-gray-100 dark:bg-gray-900 min-h-screen h-screen max-h-screen flex flex-col gap-2 sm:gap-4 overflow-auto">
                 <AppContent playTrack={playTrack} />
 
                 {/* Audio Player */}

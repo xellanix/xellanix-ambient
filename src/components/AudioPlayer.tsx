@@ -24,6 +24,7 @@ import {
     useShuffleDispatcher,
 } from "../hooks/useService";
 import { useAudioRef } from "../hooks/useSharedRef";
+import Tooltip from "rc-tooltip";
 
 interface MemoHugeiconsIconProps {
     icon: IconSvgElement;
@@ -187,6 +188,8 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
 
             if (isTextField) return; // Allow native behavior
 
+            if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+
             switch (e.code) {
                 case "KeyK": {
                     const button = playButtonRef.current;
@@ -229,58 +232,143 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
 
     return (
         <>
-            <Button
-                styleType={shuffle ? "accent" : "primary"}
-                onClick={toggleShuffle}
-                className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                title="Enable/Disable Shuffle (S)">
-                <MemoHugeiconsIcon icon={ShuffleIcon} className="size-3" strokeWidth={1} />
-            </Button>
-            <Button
-                styleType="primary"
-                onClick={playPrevious}
-                className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                disabled={!canPlayPrevious}
-                title="Previous Track (P)">
-                <MemoHugeiconsIcon icon={PreviousIcon} className="size-3" strokeWidth={0} />
-            </Button>
-            <Button
-                ref={playButtonRef}
-                styleType="primary"
-                onClick={togglePlay}
-                className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                disabled={!isTrackSelected}
-                title={"Play/Pause (K)"}
-                tabIndex={0}>
-                <MemoHugeiconsIcon
-                    icon={PlayIcon}
-                    altIcon={PauseIcon}
-                    showAlt={isPlaying}
-                    className="size-3"
-                    strokeWidth={0}
-                />
-            </Button>
-            <Button
-                styleType="primary"
-                onClick={playNext}
-                className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                disabled={!canPlayNext}
-                title="Next Track (N)">
-                <MemoHugeiconsIcon icon={NextIcon} className="size-3" strokeWidth={0} />
-            </Button>
-            <Button
-                styleType={loop !== "none" ? "accent" : "primary"}
-                onClick={toggleLoop}
-                className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                title="Loop Track/Playlist/None (L)">
-                <MemoHugeiconsIcon
-                    icon={RepeatIcon}
-                    altIcon={RepeatOne01Icon}
-                    showAlt={loop === "track"}
-                    className="size-3"
-                    strokeWidth={1}
-                />
-            </Button>
+            <Tooltip
+                overlay={
+                    <>
+                        Enable/Disable Shuffle
+                        <div className="bg-[var(--bg-secondary)] size-6 rounded-sm flex justify-center items-center font-bold border-b-2 border-[var(--bg-tertiary)]">
+                            S
+                        </div>
+                    </>
+                }
+                classNames={{
+                    root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                    body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none !flex !items-center !gap-2",
+                }}
+                showArrow={false}
+                mouseEnterDelay={0.5}
+                placement="top"
+                align={{ offset: [0, -16] }}>
+                <Button
+                    styleType={shuffle ? "accent" : "primary"}
+                    onClick={toggleShuffle}
+                    className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]">
+                    <MemoHugeiconsIcon icon={ShuffleIcon} className="size-3" strokeWidth={1} />
+                </Button>
+            </Tooltip>
+            <Tooltip
+                overlay={
+                    <>
+                        Previous Track
+                        <div className="bg-[var(--bg-secondary)] size-6 rounded-sm flex justify-center items-center font-bold border-b-2 border-[var(--bg-tertiary)]">
+                            P
+                        </div>
+                    </>
+                }
+                classNames={{
+                    root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                    body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none !flex !items-center !gap-2",
+                }}
+                showArrow={false}
+                mouseEnterDelay={0.5}
+                placement="top"
+                align={{ offset: [0, -16] }}>
+                <Button
+                    styleType="primary"
+                    onClick={playPrevious}
+                    className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
+                    disabled={!canPlayPrevious}>
+                    <MemoHugeiconsIcon icon={PreviousIcon} className="size-3" strokeWidth={0} />
+                </Button>
+            </Tooltip>
+            <Tooltip
+                overlay={
+                    <>
+                        Play/Pause
+                        <div className="bg-[var(--bg-secondary)] size-6 rounded-sm flex justify-center items-center font-bold border-b-2 border-[var(--bg-tertiary)]">
+                            K
+                        </div>
+                    </>
+                }
+                classNames={{
+                    root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                    body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none !flex !items-center !gap-2",
+                }}
+                showArrow={false}
+                mouseEnterDelay={0.5}
+                placement="top"
+                align={{ offset: [0, -16] }}>
+                <Button
+                    ref={playButtonRef}
+                    styleType="primary"
+                    onClick={togglePlay}
+                    className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
+                    disabled={!isTrackSelected}
+                    tabIndex={0}>
+                    <MemoHugeiconsIcon
+                        icon={PlayIcon}
+                        altIcon={PauseIcon}
+                        showAlt={isPlaying}
+                        className="size-3"
+                        strokeWidth={0}
+                    />
+                </Button>
+            </Tooltip>
+            <Tooltip
+                overlay={
+                    <>
+                        Next Track
+                        <div className="bg-[var(--bg-secondary)] size-6 rounded-sm flex justify-center items-center font-bold border-b-2 border-[var(--bg-tertiary)]">
+                            N
+                        </div>
+                    </>
+                }
+                classNames={{
+                    root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                    body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none !flex !items-center !gap-2",
+                }}
+                showArrow={false}
+                mouseEnterDelay={0.5}
+                placement="top"
+                align={{ offset: [0, -16] }}>
+                <Button
+                    styleType="primary"
+                    onClick={playNext}
+                    className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
+                    disabled={!canPlayNext}>
+                    <MemoHugeiconsIcon icon={NextIcon} className="size-3" strokeWidth={0} />
+                </Button>
+            </Tooltip>
+            <Tooltip
+                overlay={
+                    <>
+                        Loop Track/Playlist/None
+                        <div className="bg-[var(--bg-secondary)] size-6 rounded-sm flex justify-center items-center font-bold border-b-2 border-[var(--bg-tertiary)]">
+                            L
+                        </div>
+                    </>
+                }
+                classNames={{
+                    root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                    body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none !flex !items-center !gap-2",
+                }}
+                showArrow={false}
+                mouseEnterDelay={0.5}
+                placement="top"
+                align={{ offset: [0, -16] }}>
+                <Button
+                    styleType={loop !== "none" ? "accent" : "primary"}
+                    onClick={toggleLoop}
+                    className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]">
+                    <MemoHugeiconsIcon
+                        icon={RepeatIcon}
+                        altIcon={RepeatOne01Icon}
+                        showAlt={loop === "track"}
+                        className="size-3"
+                        strokeWidth={1}
+                    />
+                </Button>
+            </Tooltip>
         </>
     );
 };
@@ -323,7 +411,7 @@ const AudioPlayerTimeline: React.FC<AudioPlayerTimelineProps> = ({ duration }) =
 
 const getIsMuted = () => parseInt(window.localStorage.getItem("isMuted") || "0") === 1;
 const getStoredVolume = () =>
-    getIsMuted() ? 0 : parseInt(window.localStorage.getItem("volume") || "100");
+    getIsMuted() ? 0 : parseInt(window.localStorage.getItem("volume") || "100") || 100;
 const AudioPlayerVolume: React.FC = () => {
     const audioRef = useAudioRef();
     const volumeSliderInputRef = useSlider();
@@ -338,8 +426,8 @@ const AudioPlayerVolume: React.FC = () => {
 
     const handleVolumeChange = useCallback((newVolume: number) => {
         const clampedVolume = Math.max(0, Math.min(100, newVolume));
-        window.localStorage.setItem("volume", clampedVolume.toString());
-        window.localStorage.setItem("isMuted", clampedVolume !== 0 ? "1" : "0");
+        window.localStorage.setItem("isMuted", clampedVolume !== 0 ? "0" : "1");
+        window.localStorage.setItem("volume", clampedVolume === 0 ? "100" : clampedVolume.toString());
         setVolume(clampedVolume);
         if (audioRef.current) {
             audioRef.current.volume = clampedVolume / 100;
@@ -347,28 +435,76 @@ const AudioPlayerVolume: React.FC = () => {
     }, []);
 
     const handleMute = useCallback(() => {
-        const isSoundOn = volume !== 0;
-        window.localStorage.setItem("isMuted", isSoundOn ? "1" : "0");
-        const newVolume = getStoredVolume();
-        setVolume(newVolume);
-        if (audioRef.current) audioRef.current.volume = newVolume / 100;
-    }, [volume]);
+        setVolume((prev) => {
+            const isSoundOn = prev !== 0;
+            window.localStorage.setItem("isMuted", isSoundOn ? "1" : "0");
+            const newVolume = getStoredVolume();
+            if (audioRef.current) audioRef.current.volume = newVolume / 100;
+
+            return newVolume;
+        });
+    }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const active = document.activeElement as HTMLElement | null;
+            const focusedTag = active?.tagName ?? "";
+            const isTextField =
+                focusedTag === "INPUT" ||
+                focusedTag === "TEXTAREA" ||
+                active?.getAttribute("contenteditable") === "true";
+
+            if (isTextField) return; // Allow native behavior
+
+            if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+
+            switch (e.code) {
+                case "KeyM": {
+                    e.preventDefault();
+                    handleMute();
+                    break;
+                }
+                default:
+                    break;
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
 
     return (
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0 h-full not-md:w-full not-md:max-w-56">
-            <Button
-                styleType="secondary"
-                onClick={handleMute}
-                className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                title={volume === 0 ? "Unmute" : "Mute"}>
-                <MemoHugeiconsIcon
-                    icon={VolumeHighIcon}
-                    altIcon={VolumeOffIcon}
-                    showAlt={volume === 0}
-                    className="size-3"
-                    strokeWidth={0}
-                />
-            </Button>
+            <Tooltip
+                overlay={
+                    <>
+                        {volume === 0 ? "Unmute" : "Mute"}
+                        <div className="bg-[var(--bg-secondary)] size-6 rounded-sm flex justify-center items-center font-bold border-b-2 border-[var(--bg-tertiary)]">
+                            M
+                        </div>
+                    </>
+                }
+                classNames={{
+                    root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                    body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none !flex !items-center !gap-2",
+                }}
+                showArrow={false}
+                mouseEnterDelay={0.5}
+                placement="top"
+                align={{ offset: [0, -16] }}>
+                <Button
+                    styleType="secondary"
+                    onClick={handleMute}
+                    className="size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]">
+                    <MemoHugeiconsIcon
+                        icon={VolumeHighIcon}
+                        altIcon={VolumeOffIcon}
+                        showAlt={volume === 0}
+                        className="size-3"
+                        strokeWidth={0}
+                    />
+                </Button>
+            </Tooltip>
             <Slider
                 sliderInputRef={volumeSliderInputRef}
                 className="flex-1 max-w-32"

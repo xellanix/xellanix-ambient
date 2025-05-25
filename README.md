@@ -13,21 +13,24 @@ An simple music player with focus on lyrics display.
 - [x] (04/26/2025 - v0.4.0) Add shuffle and loop control
 - [x] (04/26/2025 - v0.4.0) Add volume control
 - [ ] Add PWA or Electron support
-- [-] (05/20/2025 - 0.7.4) Improve other UI/UX*
+- [-] (05/25/2025 - 0.7.5) Improve other UI/UX*
 - [x] (05/11/2025 - 0.6.3) Save volume level, shuffle, loop, dark mode
-- [-] (05/20/2025 - 0.7.4) Keyboard shortcuts
+- [-] (05/25/2025 - 0.7.5) Keyboard shortcuts
 
 ## Notes for Improve other UI/UX:
 - [ ] Tooltips
 
 ## Notes for Keyboard shortcuts:
 - [x] Toggle dark mode: D
-- [x] Toggle lyrics: C
 - [x] Toggle shuffle: S
 - [x] Toggle loop: L
 - [x] Next track: N
 - [x] Previous track: P
+- [x] Mute/Unmute: M
 - [x] Add track to playlist: A
+- [x] Toggle maximize lyrics: F
+- [x] Switch to playlist view: Shift + P
+- [x] Switch to queue view: Shift + Q
 
 ## Future Ideas:
 - [ ] Add more codecs support:

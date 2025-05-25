@@ -10,6 +10,7 @@ import {
     usePlaylistDispatcher,
     useQueue,
 } from "../hooks/useService";
+import Tooltip from "rc-tooltip";
 
 interface PlaylistProps {
     playTrack: (track: Track, index: number, total: number) => Promise<void>;
@@ -51,18 +52,28 @@ const PlaylistItem = React.memo(
                         </span>
                     )}
                 </div>
-                <Button
-                    styleType="secondary"
-                    title="Remove Track"
-                    className="size-5 sm:size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                    onClick={() => handleRemoveTrack(track.id)}>
-                    <HugeiconsIcon
-                        icon={Cancel01Icon}
-                        className="size-2 sm:size-3"
-                        strokeWidth={1}
-                        color="var(--text-tertiary)"
-                    />
-                </Button>
+                <Tooltip
+                    overlay="Remove Track"
+                    classNames={{
+                        root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                        body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none",
+                    }}
+                    showArrow={false}
+                    mouseEnterDelay={0.5}
+                    align={{ offset: [-16, 0] }}
+                    placement="left">
+                    <Button
+                        styleType="secondary"
+                        className="size-5 sm:size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
+                        onClick={() => handleRemoveTrack(track.id)}>
+                        <HugeiconsIcon
+                            icon={Cancel01Icon}
+                            className="size-2 sm:size-3"
+                            strokeWidth={1}
+                            color="var(--text-tertiary)"
+                        />
+                    </Button>
+                </Tooltip>
             </li>
         );
     }
@@ -181,13 +192,30 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
                     Playlist
                 </h2>
                 <div>
-                    <Button
-                        styleType="accent"
-                        onClick={handleAddTrack}
-                        className="w-8 h-7.5 [--button-p:theme(padding.2)]"
-                        title="Add Track (A)">
-                        <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={0} />
-                    </Button>
+                    <Tooltip
+                        overlay={
+                            <>
+                                Add Track
+                                <div className="bg-[var(--bg-secondary)] size-6 rounded-sm flex justify-center items-center font-bold border-b-2 border-[var(--bg-tertiary)]">
+                                    A
+                                </div>
+                            </>
+                        }
+                        classNames={{
+                            root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                            body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none !flex !items-center !gap-2",
+                        }}
+                        showArrow={false}
+                        mouseEnterDelay={0.5}
+                        align={{ offset: [-16, 0] }}
+                        placement="left">
+                        <Button
+                            styleType="accent"
+                            onClick={handleAddTrack}
+                            className="w-8 h-7.5 [--button-p:theme(padding.2)]">
+                            <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={0} />
+                        </Button>
+                    </Tooltip>
                     <input
                         type="file"
                         accept="audio/*,.lrc"

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
     AudioPlayerControllerMemo,
     AudioPlayerIslandMemo,
@@ -25,6 +25,7 @@ import {
 import AudioPlayerMemo from "./components/AudioPlayer";
 import { SharedRefProvider, useAudioRef, useGlanceRef, useLyricsRef } from "./hooks/useSharedRef";
 import { TrackGlance } from "./components/TrackGlance";
+import Tooltip from "rc-tooltip";
 
 const getLoopMode = () =>
     (window.localStorage.getItem("loopMode") as "none" | "track" | "playlist") || "none";
@@ -32,66 +33,96 @@ const getLoopMode = () =>
 const MaximizeLyricsButton = React.memo(
     ({ isMaximized, onClick }: { isMaximized: boolean; onClick: () => void }) => (
         <div className="absolute z-50 right-0">
-            <Button
-                styleType="secondary"
-                className="w-10 h-9.5 [--button-p:theme(padding.2)] opacity-0 group-hover:animate-[show-maximize_4s] hover:!opacity-100 focus-visible:!opacity-100"
-                onClick={onClick}
-                title={isMaximized ? "Restore Lyrics" : "Maximize Lyrics"}>
-                <HugeiconsIcon
-                    icon={FullScreenIcon}
-                    altIcon={ArrowShrink02Icon}
-                    showAlt={isMaximized}
-                    className="size-6"
-                    strokeWidth={0}
-                    opacity={0.5}
-                />
-            </Button>
+            <Tooltip
+                overlay={
+                    <>
+                        {isMaximized ? "Restore Lyrics" : "Maximize Lyrics"}
+                        <div className="bg-[var(--bg-secondary)] size-6 rounded-sm flex justify-center items-center font-bold border-b-2 border-[var(--bg-tertiary)]">
+                            F
+                        </div>
+                    </>
+                }
+                classNames={{
+                    root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                    body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none !flex !items-center !gap-2",
+                }}
+                showArrow={false}
+                mouseEnterDelay={0.5}
+                align={{ offset: [-16, 0] }}
+                placement="left">
+                <Button
+                    styleType="secondary"
+                    className="w-10 h-9.5 [--button-p:theme(padding.2)] opacity-0 group-hover:animate-[show-maximize_4s] hover:!opacity-100 focus-visible:!opacity-100"
+                    onClick={onClick}>
+                    <HugeiconsIcon
+                        icon={FullScreenIcon}
+                        altIcon={ArrowShrink02Icon}
+                        showAlt={isMaximized}
+                        className="size-6"
+                        strokeWidth={0}
+                        opacity={0.5}
+                    />
+                </Button>
+            </Tooltip>
         </div>
     )
 );
 
 const AppContent = React.memo(({ playTrack }: { playTrack: any }) => {
     const [maximizeLyrics, setMaximizeLyrics] = useState<boolean>(false);
-    const [showLyrics, setShowLyrics] = useState<boolean>(true);
 
     const toggleMaximizeLyrics = useCallback(() => setMaximizeLyrics((prev) => !prev), []);
-    const toggleLyrics = useCallback(() => setShowLyrics((prev) => !prev), []);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const active = document.activeElement as HTMLElement | null;
+            const focusedTag = active?.tagName ?? "";
+            const isTextField =
+                focusedTag === "INPUT" ||
+                focusedTag === "TEXTAREA" ||
+                active?.getAttribute("contenteditable") === "true";
+
+            if (isTextField) return; // Allow native behavior
+
+            if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+
+            switch (e.code) {
+                case "KeyF": {
+                    e.preventDefault();
+                    toggleMaximizeLyrics();
+                    break;
+                }
+                default:
+                    break;
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
 
     return (
         <div className="flex flex-col sm:flex-row gap-4 sm:flex-1 sm:overflow-hidden max-h-full">
             <div className="@container/main flex flex-col flex-1 relative group overflow-auto sm:h-full max-h-full">
-                {showLyrics && (
-                    <>
-                        <div className="@container absolute size-full flex justify-center items-center">
-                            <div className="flex items-center gap-2">
-                                <img
-                                    src="./icon-sq.svg"
-                                    alt="Xellanix icon"
-                                    className="@sm:size-12 size-10"
-                                />
-                                <h1 className="text-2xl @sm:text-4xl font-bold text-[var(--text-normal)]">
-                                    Ambient
-                                </h1>
-                            </div>
-                        </div>
-                        <TrackGlance />
-                        <div className="bg-gray-100 dark:bg-gray-900 absolute size-full peer-[.lyrics-bg]:opacity-100 peer-[.lyrics-bg]:z-0 -z-10" />
-                        <MaximizeLyricsButton
-                            isMaximized={maximizeLyrics}
-                            onClick={toggleMaximizeLyrics}
+                <div className="@container absolute size-full flex justify-center items-center">
+                    <div className="flex items-center gap-2">
+                        <img
+                            src="./icon-sq.svg"
+                            alt="Xellanix icon"
+                            className="@sm:size-12 size-10"
                         />
-                        <LyricsDisplay />
-                    </>
-                )}
+                        <h1 className="text-2xl @sm:text-4xl font-bold text-[var(--text-normal)]">
+                            Ambient
+                        </h1>
+                    </div>
+                </div>
+                <TrackGlance />
+                <div className="bg-gray-100 dark:bg-gray-900 absolute size-full peer-[.lyrics-bg]:opacity-100 peer-[.lyrics-bg]:z-0 -z-10" />
+                <MaximizeLyricsButton isMaximized={maximizeLyrics} onClick={toggleMaximizeLyrics} />
+                <LyricsDisplay />
             </div>
 
-            {!maximizeLyrics && (
-                <SidebarMemo
-                    playTrack={playTrack}
-                    showLyrics={showLyrics}
-                    toggleLyrics={toggleLyrics}
-                />
-            )}
+            {!maximizeLyrics && <SidebarMemo playTrack={playTrack} />}
         </div>
     );
 });

@@ -8,6 +8,7 @@ import {
     createContext,
     memo,
     useMemo,
+    useEffect,
 } from "react";
 import { cn } from "../lib/utils";
 
@@ -28,8 +29,70 @@ const SliderContext = createContext<SliderContextProps>({
     handleClick: () => {},
 });
 
-const SliderOptionRaw: FC<{ index: number, children: ReactElement }> = ({ index, children }) => {
+type ButtonOverride<T> = Omit<
+    React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>,
+    keyof T
+> &
+    T;
+interface SliderOptionProps
+    extends ButtonOverride<{
+        index: number;
+        children: ReactElement;
+        keyAccelerator?: string;
+        keyModifier?: {
+            ctrl?: boolean;
+            meta?: boolean;
+            alt?: boolean;
+            shift?: boolean;
+        };
+    }> {}
+
+const SliderOptionRaw: FC<SliderOptionProps> = ({
+    index,
+    children,
+    keyAccelerator,
+    keyModifier,
+    ...props
+}) => {
     const { selected, handleClick } = useContext(SliderContext);
+
+    useEffect(() => {
+        if (!keyAccelerator) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const active = document.activeElement as HTMLElement | null;
+            const focusedTag = active?.tagName ?? "";
+            const isTextField =
+                focusedTag === "INPUT" ||
+                focusedTag === "TEXTAREA" ||
+                active?.getAttribute("contenteditable") === "true";
+
+            if (isTextField) return; // Allow native behavior
+
+            const mod: SliderOptionProps["keyModifier"] = {
+                ctrl: keyModifier?.ctrl || false,
+                meta: keyModifier?.meta || false,
+                alt: keyModifier?.alt || false,
+                shift: keyModifier?.shift || false,
+            };
+
+            if (
+                e.ctrlKey !== mod.ctrl ||
+                e.metaKey !== mod.meta ||
+                e.altKey !== mod.alt ||
+                e.shiftKey !== mod.shift
+            )
+                return;
+
+            if (e.code === keyAccelerator) {
+                e.preventDefault();
+                handleClick(index);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [keyModifier]);
 
     return (
         <button
@@ -38,7 +101,8 @@ const SliderOptionRaw: FC<{ index: number, children: ReactElement }> = ({ index,
                 "cursor-pointer *:cursor-pointer",
                 selected === index ? "text-[var(--text-accent)]" : "text-[var(--text-secondary)]"
             )}
-            onClick={() => handleClick(index)}>
+            onClick={() => handleClick(index)}
+            {...props}>
             {children}
         </button>
     );
@@ -78,9 +142,7 @@ const SliderRadioButtonRaw: FC<SliderRadioButtonProps> = ({
                     }}
                 />
 
-                <SliderContext.Provider value={providerMemo}>
-                    {children}
-                </SliderContext.Provider>
+                <SliderContext.Provider value={providerMemo}>{children}</SliderContext.Provider>
             </div>
         </div>
     );

@@ -145,19 +145,23 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
     );
 
     const togglePlay = useCallback(() => {
-        if (audioRef.current && current >= 0) {
-            if (isPlaying) {
-                audioRef.current.pause();
-                setIsPlaying(false);
-            } else {
-                audioRef.current.play().catch((err) => {
-                    console.error("Playback error:", err);
-                    setIsPlaying(false);
-                });
-                setIsPlaying(true);
+        setIsPlaying((prev) => {
+            if (audioRef.current) {
+                if (prev) {
+                    audioRef.current.pause();
+                    return false;
+                } else {
+                    audioRef.current.play().catch((err) => {
+                        console.error("Playback error:", err);
+                        return false;
+                    });
+                    return true;
+                }
             }
-        }
-    }, [current, isPlaying]);
+
+            return prev;
+        });
+    }, []);
 
     const playPrevious = useCallback(async () => {
         if (current > 0) await handlePlay(current - 1);
@@ -228,7 +232,7 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [canPlayNext, canPlayPrevious, togglePlay]);
+    }, [canPlayNext, canPlayPrevious, playNext, playPrevious]);
 
     return (
         <>
@@ -427,7 +431,10 @@ const AudioPlayerVolume: React.FC = () => {
     const handleVolumeChange = useCallback((newVolume: number) => {
         const clampedVolume = Math.max(0, Math.min(100, newVolume));
         window.localStorage.setItem("isMuted", clampedVolume !== 0 ? "0" : "1");
-        window.localStorage.setItem("volume", clampedVolume === 0 ? "100" : clampedVolume.toString());
+        window.localStorage.setItem(
+            "volume",
+            clampedVolume === 0 ? "100" : clampedVolume.toString()
+        );
         setVolume(clampedVolume);
         if (audioRef.current) {
             audioRef.current.volume = clampedVolume / 100;

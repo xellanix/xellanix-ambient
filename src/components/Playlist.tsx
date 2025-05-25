@@ -9,6 +9,7 @@ import {
     usePlaylist,
     usePlaylistDispatcher,
     useQueue,
+    useQueueDispatcher,
 } from "../hooks/useService";
 import Tooltip from "rc-tooltip";
 
@@ -82,6 +83,7 @@ const PlaylistItem = React.memo(
 const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
     const playlist = usePlaylist();
     const setPlaylist = usePlaylistDispatcher();
+    const setQueue = useQueueDispatcher();
     const current = useCurrentTrackIndex();
     const queue = useQueue();
 
@@ -107,40 +109,65 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
                 }
             }
 
-            const newTracksPromises: Promise<Track>[] = [];
-
-            audioMap.forEach((audioFile, baseName) => {
+            audioMap.forEach(async (audioFile, baseName) => {
                 const lyricFile = lyricMap.get(baseName);
+                const id = playlistId++;
+                const url = URL.createObjectURL(audioFile);
 
-                const trackPromise = (async (): Promise<Track> => {
-                    const lyrics = lyricFile ? await fetchLyrics(lyricFile) : [];
-                    const metadata = await extractMetadata(audioFile);
+                const lyrics = lyricFile ? await fetchLyrics(lyricFile) : [];
 
-                    return {
-                        id: playlistId++,
-                        name: metadata.title,
-                        artist: metadata.performer,
-                        url: URL.createObjectURL(audioFile),
-                        hasLyrics: !!lyricFile,
-                        lyrics,
-                        codec: metadata.audioQuality,
-                        coverUrl: metadata.coverData,
-                    };
+                // Add placeholder track first
+                const placeholderTrack: Track = {
+                    id,
+                    name: audioFile.name,
+                    artist: "",
+                    url,
+                    hasLyrics: !!lyricFile,
+                    lyrics,
+                    codec: "",
+                    coverUrl: "./cover.svg", // or a default cover
+                };
+
+                setPlaylist((prev) => [...prev, placeholderTrack]);
+
+                // Fetch lyrics and metadata asynchronously
+                (async () => {
+                    const [metadata] = await Promise.all([extractMetadata(audioFile)]);
+
+                    setPlaylist((prev) =>
+                        prev.map((t) =>
+                            t.id === id
+                                ? {
+                                      ...t,
+                                      name: metadata.title || t.name,
+                                      artist: metadata.performer || "",
+                                      codec: metadata.audioQuality,
+                                      coverUrl: metadata.coverData || "",
+                                  }
+                                : t
+                        )
+                    );
+                    setQueue((prev) =>
+                        prev.map((t) =>
+                            t.id === id
+                                ? {
+                                      ...t,
+                                      name: metadata.title || t.name,
+                                      artist: metadata.performer || "",
+                                      codec: metadata.audioQuality,
+                                      coverUrl: metadata.coverData || "",
+                                  }
+                                : t
+                        )
+                    );
                 })();
-
-                newTracksPromises.push(trackPromise);
             });
-
-            // Wait for all tracks to be processed in parallel
-            const newTracks = await Promise.all(newTracksPromises);
-
-            setPlaylist((prev) => [...prev, ...newTracks]);
 
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
         },
-        [fetchLyrics]
+        [fetchLyrics, setPlaylist]
     );
 
     const handleRemoveTrack = useCallback(

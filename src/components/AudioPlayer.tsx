@@ -25,6 +25,7 @@ import {
 } from "../hooks/useService";
 import { useAudioRef } from "../hooks/useSharedRef";
 import Tooltip from "rc-tooltip";
+import { getSetting, setSetting } from "../lib/migration";
 
 interface MemoHugeiconsIconProps {
     icon: IconSvgElement;
@@ -138,7 +139,7 @@ const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
         () =>
             setShuffle((prev) => {
                 const newVal = !prev;
-                window.localStorage.setItem("isShuffled", newVal ? "1" : "0");
+                setSetting("isShuffled", newVal ? "1" : "0");
                 return newVal;
             }),
         []
@@ -413,9 +414,8 @@ const AudioPlayerTimeline: React.FC<AudioPlayerTimelineProps> = ({ duration }) =
     );
 };
 
-const getIsMuted = () => parseInt(window.localStorage.getItem("isMuted") || "0") === 1;
-const getStoredVolume = () =>
-    getIsMuted() ? 0 : parseInt(window.localStorage.getItem("volume") || "100") || 100;
+const getIsMuted = () => parseInt(getSetting("isMuted") || "0") === 1;
+const getStoredVolume = () => (getIsMuted() ? 0 : parseInt(getSetting("volume") || "100") || 100);
 const AudioPlayerVolume: React.FC = () => {
     const audioRef = useAudioRef();
     const volumeSliderInputRef = useSlider();
@@ -430,11 +430,8 @@ const AudioPlayerVolume: React.FC = () => {
 
     const handleVolumeChange = useCallback((newVolume: number) => {
         const clampedVolume = Math.max(0, Math.min(100, newVolume));
-        window.localStorage.setItem("isMuted", clampedVolume !== 0 ? "0" : "1");
-        window.localStorage.setItem(
-            "volume",
-            clampedVolume === 0 ? "100" : clampedVolume.toString()
-        );
+        setSetting("isMuted", clampedVolume !== 0 ? "0" : "1");
+        setSetting("volume", clampedVolume === 0 ? "100" : clampedVolume.toString());
         setVolume(clampedVolume);
         if (audioRef.current) {
             audioRef.current.volume = clampedVolume / 100;
@@ -444,7 +441,7 @@ const AudioPlayerVolume: React.FC = () => {
     const handleMute = useCallback(() => {
         setVolume((prev) => {
             const isSoundOn = prev !== 0;
-            window.localStorage.setItem("isMuted", isSoundOn ? "1" : "0");
+            setSetting("isMuted", isSoundOn ? "1" : "0");
             const newVolume = getStoredVolume();
             if (audioRef.current) audioRef.current.volume = newVolume / 100;
 

@@ -11,6 +11,7 @@ import SliderRadioButton, { SliderOption } from "./SlideRadioButton";
 import Playlist from "./Playlist";
 import Queue from "./Queue";
 import Tooltip from "rc-tooltip";
+import { APP_VERSION, getSetting, setSetting } from "../lib/migration";
 
 const MemoHugeiconsIcon = React.memo(({ icon }: { icon: IconSvgElement }) => {
     return <HugeiconsIcon icon={icon} className="size-4" strokeWidth={0} />;
@@ -73,7 +74,10 @@ const ViewSelector = React.memo(({ onChange }: ViewSelectorProps) => {
                 mouseEnterDelay={0.5}
                 placement="top"
                 align={{ offset: [0, -16] }}>
-                <SliderOption index={1} keyAccelerator="KeyQ" keyModifier={{ shift: true, alt: undefined }}>
+                <SliderOption
+                    index={1}
+                    keyAccelerator="KeyQ"
+                    keyModifier={{ shift: true, alt: undefined }}>
                     <MemoHugeiconsIcon icon={Sorting04Icon} />
                 </SliderOption>
             </Tooltip>
@@ -82,7 +86,7 @@ const ViewSelector = React.memo(({ onChange }: ViewSelectorProps) => {
 });
 
 const getTheme = () => {
-    const isDark = window.localStorage.getItem("theme") === "dark";
+    const isDark = getSetting("theme") === "dark";
     document.documentElement.classList.toggle("dark", isDark);
     return isDark;
 };
@@ -93,7 +97,7 @@ const HeaderMemo = React.memo(() => {
         setDarkMode((prev) => {
             const isDark = !prev;
             document.documentElement.classList.toggle("dark", isDark);
-            window.localStorage.setItem("theme", isDark ? "dark" : "light");
+            setSetting("theme", isDark ? "dark" : "light");
             return isDark;
         });
     }, []);
@@ -130,10 +134,33 @@ const HeaderMemo = React.memo(() => {
         <>
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                    <img src="./icon-sq.svg" alt="Xellanix icon" className="size-7" />
-                    <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-normal)]">
-                        Ambient
-                    </h1>
+                    <Tooltip
+                        overlay={
+                            <>
+                                <div className="flex gap-2 items-center font-bold">
+                                    Xellanix Ambient
+                                    <div className="bg-[var(--bg-secondary)] w-12 h-6 rounded-sm flex justify-center items-center font-bold border-b-2 border-[var(--bg-tertiary)]">
+                                        v{APP_VERSION}
+                                    </div>
+                                </div>
+                                &copy; 2025 Xellanix
+                            </>
+                        }
+                        classNames={{
+                            root: "!bg-[var(--bg-primary)] !p-0 !opacity-100 shadow-sm !rounded-md",
+                            body: "!text-[var(--text-secondary)] !bg-[var(--bg-primary)] !rounded-sm !border-none !flex !flex-col !items-center !gap-2",
+                        }}
+                        showArrow={false}
+                        mouseEnterDelay={0.5}
+                        align={{ offset: [0, 16] }}
+                        placement="bottom">
+                        <div className="flex items-center gap-2">
+                            <img src="./icon-sq.svg" alt="Xellanix icon" className="size-7" />
+                            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-normal)]">
+                                Ambient
+                            </h1>
+                        </div>
+                    </Tooltip>
                 </div>
                 <div className="flex space-x-2 sm:space-x-3">
                     <Tooltip

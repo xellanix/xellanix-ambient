@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { Track } from "../types";
 import { useGlanceRef, useLyricsRef } from "./useSharedRef";
 import { binarySearch, findLyricIndex, shuffleArray } from "../lib/utils";
+import { getSetting } from "../lib/migration";
 
 interface ServiceProviderProps {
     children: React.ReactNode;
@@ -61,14 +62,11 @@ const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
         if (timeInt === lyricInt || (currentLyricIndex >= 0 && index !== currentLyricIndex)) {
             glanceRef.current?.classList.toggle("glance", false);
             glanceRef.current?.classList.toggle("lyrics", true);
-            glanceRef.current?.classList.toggle("lyrics-bg", true);
         }
         else if (currentLyricIndex < 0 && timeInt < lyricInt) {
             glanceRef.current?.classList.toggle("glance", true);
             glanceRef.current?.classList.toggle("lyrics", false);
-        } else if (timeInt === 0) {
-            glanceRef.current?.classList.toggle("glance", true);
-            glanceRef.current?.classList.toggle("lyrics", true);
+            glanceRef.current?.classList.toggle("lyrics-bg", true);
         }
 
         if (index !== currentLyricIndex) {
@@ -97,7 +95,7 @@ const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
     );
 };
 
-const getIsShuffled = () => parseInt(window.localStorage.getItem("isShuffled") || "0") === 1;
+const getIsShuffled = () => parseInt(getSetting("isShuffled") || "0") === 1;
 const PlaylistProvider = React.memo(
     ({ children, resetState }: PlaylistProviderProps & { resetState: () => void }) => {
         const [playlist, setPlaylist] = useState<Track[]>([]);

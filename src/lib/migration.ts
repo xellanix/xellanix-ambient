@@ -6,8 +6,8 @@ function setStorage(key: string, value: string): void {
 	localStorage.setItem(key, value);
 }
 
-const APP_VERSION = "1.1.0";
-const MIGRATION_VERSION = "1.0.0";
+const APP_VERSION = "1.1.1";
+const MIGRATION_VERSION = "1.1.1";
 
 function getValueByPath<T>(obj: any, keys: (string | number)[]): T | undefined {
 	return keys.reduce((acc, key) => acc?.[key], obj);
@@ -53,9 +53,8 @@ const checkMigration = (paths: string[]) => {
 
 function migrate() {
 	const paths = getPaths();
-	console.log(paths);
 
-	if (checkMigration(paths.concat(["appVersion"])) != null) {
+	if (checkMigration(paths.concat(["migrateVersion"])) != null) {
 		// Migrate if version is not MIGRATION_VERSION
 		console.log("Migrating...");
 		const [appName, ...others] = paths;
@@ -68,6 +67,7 @@ function migrate() {
 		const getTheme = getStorage("theme") ?? "light";
 
 		setValueByPath(obj, others.concat(["appVersion"]), APP_VERSION);
+		setValueByPath(obj, others.concat(["migrateVersion"]), MIGRATION_VERSION);
 		setValueByPath(obj, others.concat(["loopMode"]), getLoopMode);
 		setValueByPath(obj, others.concat(["isShuffled"]), getIsShuffled);
 		setValueByPath(obj, others.concat(["isMuted"]), getIsMuted);

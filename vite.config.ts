@@ -36,7 +36,7 @@ export default defineConfig({
 				theme_color: "#ffffff",
 				description: "A Music Player with Enhanced Lyrics Display",
 				display: "standalone",
-				orientation: "portrait",
+				orientation: "any",
 				icons: [
 					{
 						src: "pwa-64x64.png",

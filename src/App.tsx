@@ -108,7 +108,7 @@ const AppContent = React.memo(({ playTrack }: { playTrack: any }) => {
                 <div className="@container absolute size-full flex justify-center items-center peer-[.lyrics-bg]:opacity-0">
                     <div className="flex items-center gap-2">
                         <img
-                            src="./icon-sq.svg"
+                            src="./favicon.svg"
                             alt="Xellanix icon"
                             className="@sm:size-12 size-10"
                         />

@@ -155,7 +155,7 @@ const HeaderMemo = React.memo(() => {
                         align={{ offset: [0, 16] }}
                         placement="bottom">
                         <div className="flex items-center gap-2">
-                            <img src="./icon-sq.svg" alt="Xellanix icon" className="size-7" />
+                            <img src="./favicon.svg" alt="Xellanix icon" className="size-7" />
                             <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-normal)]">
                                 Ambient
                             </h1>

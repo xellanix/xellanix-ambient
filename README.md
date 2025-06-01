@@ -12,11 +12,15 @@ An simple music player with focus on lyrics display.
 - [x] (04/26/2025 - v0.2.0) Animate lyrics scroll
 - [x] (04/26/2025 - v0.4.0) Add shuffle and loop control
 - [x] (04/26/2025 - v0.4.0) Add volume control
-- [ ] Add PWA or Electron support
-- [x] (05/31/2025 - 1.0.0) Improve other UI/UX*
-- [x] (05/11/2025 - 0.6.3) Save volume level, shuffle, loop, dark mode
-- [x] (05/25/2025 - 0.7.5) Keyboard shortcuts*
-- [x] (05/25/2025 - 0.8.0) Improve file adding performance
+- [-] (06/01/2025 - v1.1.0) Add PWA or Electron support
+- [x] (05/31/2025 - v1.0.0) Improve other UI/UX*
+- [x] (05/11/2025 - v0.6.3) Save volume level, shuffle, loop, dark mode
+- [x] (05/25/2025 - v0.7.5) Keyboard shortcuts*
+- [x] (05/25/2025 - v0.8.0) Improve file adding performance
+
+## Notes for Add PWA or Electron support:
+- [x] Add PWA support
+- [ ] Add Electron support
 
 ## Notes for Improve other UI/UX:
 - [x] Tooltips
@@ -39,5 +43,6 @@ An simple music player with focus on lyrics display.
   - [ ] EAC3
   - [ ] EAC3 JOC
   - etc...
-- [x] (05/31/2025 - 1.0.0) Add animated background
+- [x] (05/31/2025 - v1.0.0) Add animated background
 - [ ] Add lyrics matching by voice recognition
+- [ ] TTML lyric file support

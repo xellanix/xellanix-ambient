@@ -6,6 +6,7 @@ import { Add01Icon, Cancel01Icon } from "@hugeicons-pro/core-solid-rounded";
 import { cn, extractMetadata, fetchLyrics } from "../lib/utils";
 import {
     useCurrentTrackIndex,
+    useHandlePlay,
     usePlaylist,
     usePlaylistDispatcher,
     useQueue,
@@ -14,7 +15,6 @@ import {
 import Tooltip from "rc-tooltip";
 
 interface PlaylistProps {
-    playTrack: (track: Track, index: number, total: number) => Promise<void>;
     className?: string;
 }
 
@@ -32,7 +32,7 @@ const PlaylistItem = React.memo(
         index: number;
         currentId: number;
         handlePlayTrack: (index: number) => Promise<void>;
-        handleRemoveTrack: (id: number) => void;
+        handleRemoveTrack: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, id: number) => void;
     }) => {
         return (
             <li
@@ -66,7 +66,7 @@ const PlaylistItem = React.memo(
                     <Button
                         styleType="secondary"
                         className="size-5 sm:size-6 [--button-p:0] [--button-depth:-0.125rem] [--button-depth-jump:-0.25rem] [--button-depth-shrink:-0.1rem]"
-                        onClick={() => handleRemoveTrack(track.id)}>
+                        onClick={(e) => handleRemoveTrack(e, track.id)}>
                         <HugeiconsIcon
                             icon={Cancel01Icon}
                             className="size-2 sm:size-3"
@@ -80,12 +80,13 @@ const PlaylistItem = React.memo(
     }
 );
 
-const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
+const Playlist: React.FC<PlaylistProps> = ({ className }) => {
     const playlist = usePlaylist();
     const setPlaylist = usePlaylistDispatcher();
     const setQueue = useQueueDispatcher();
     const current = useCurrentTrackIndex();
     const queue = useQueue();
+    const handlePlay = useHandlePlay();
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -171,8 +172,9 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
     );
 
     const handleRemoveTrack = useCallback(
-        (id: number) => {
-            setPlaylist((prev) => prev.filter((_) => _.id !== id));
+        (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, trackId: number) => {
+            e.stopPropagation();
+            setPlaylist((prev) => prev.filter(({ id }) => id !== trackId));
         },
         [current]
     );
@@ -181,9 +183,9 @@ const Playlist: React.FC<PlaylistProps> = ({ playTrack, className }) => {
         async (index: number) => {
             const track = playlist[index];
             const queueIndex = queue.findIndex((t) => t.id === track.id);
-            await playTrack(track, queueIndex, queue.length);
+            await handlePlay(queueIndex);
         },
-        [playlist, queue]
+        [playlist, queue, handlePlay]
     );
 
     useEffect(() => {

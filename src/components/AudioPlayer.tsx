@@ -415,7 +415,8 @@ const AudioPlayerTimeline: React.FC<AudioPlayerTimelineProps> = ({ duration }) =
 };
 
 const getIsMuted = () => parseInt(getSetting("isMuted") || "0") === 1;
-const getStoredVolume = () => (getIsMuted() ? 0 : parseInt(getSetting("volume") || "100") || 100);
+const rv = (volume: number) => Math.max(0, Math.min(100, Math.round(volume)));
+const getStoredVolume = () => (getIsMuted() ? 0 : rv(parseInt(getSetting("volume") || "100")));
 const AudioPlayerVolume: React.FC = () => {
     const audioRef = useAudioRef();
     const volumeSliderInputRef = useSlider();
@@ -429,7 +430,7 @@ const AudioPlayerVolume: React.FC = () => {
     }, []);
 
     const handleVolumeChange = useCallback((newVolume: number) => {
-        const clampedVolume = Math.max(0, Math.min(100, newVolume));
+        const clampedVolume = rv(newVolume);
         setSetting("isMuted", clampedVolume !== 0 ? "0" : "1");
         setSetting("volume", clampedVolume === 0 ? "100" : clampedVolume.toString());
         setVolume(clampedVolume);

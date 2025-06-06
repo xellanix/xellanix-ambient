@@ -1,23 +1,14 @@
 import React, { useCallback } from "react";
-import { Track } from "../types";
-import { useCurrentTrackIndex, useQueue } from "../hooks/useService";
+import { useCurrentTrackIndex, useHandlePlay, useQueue } from "../hooks/useService";
 
 interface QueueProps {
-    playTrack: (track: Track, index: number, total: number) => Promise<void>;
     className?: string;
 }
 
-const Queue: React.FC<QueueProps> = ({ playTrack, className }) => {
+const Queue: React.FC<QueueProps> = ({ className }) => {
     const current = useCurrentTrackIndex();
     const queue = useQueue();
-
-    const changeTrack = useCallback(
-        async (index: number) => {
-            const track = queue[index];
-            await playTrack(track, index, queue.length);
-        },
-        [queue, playTrack]
-    );
+    const handlePlay = useHandlePlay();
 
     const scrollToCurrentTrack = useCallback(
         (panel: HTMLDivElement) => {
@@ -55,7 +46,7 @@ const Queue: React.FC<QueueProps> = ({ playTrack, className }) => {
                                     ? "bg-gray-200 dark:bg-gray-600"
                                     : "hover:bg-gray-100 dark:hover:bg-gray-700"
                             } text-sm sm:text-base`}
-                            onClick={() => changeTrack(index)}>
+                            onClick={() => handlePlay(index)}>
                             <img
                                 src={track.coverUrl}
                                 className="size-12 mr-2 rounded-md"

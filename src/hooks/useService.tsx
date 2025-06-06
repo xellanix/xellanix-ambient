@@ -28,6 +28,7 @@ const PlaylistContext = createContext<Track[]>([]);
 const ShuffleContext = createContext<boolean>(false);
 const PlaylistDispatcherContext = createContext<DispatchContext<Track[]>>(() => {});
 const ShuffleDispatcherContext = createContext<DispatchContext<boolean>>(() => {});
+const HandlePlayContext = createContext<(newIndex: number) => Promise<void>>(async () => {});
 
 const SelectedTrackContext = createContext<Track | null>(null);
 
@@ -62,8 +63,7 @@ const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
         if (timeInt === lyricInt || (currentLyricIndex >= 0 && index !== currentLyricIndex)) {
             glanceRef.current?.classList.toggle("glance", false);
             glanceRef.current?.classList.toggle("lyrics", true);
-        }
-        else if (currentLyricIndex < 0 && timeInt < lyricInt) {
+        } else if (currentLyricIndex < 0 && timeInt < lyricInt) {
             glanceRef.current?.classList.toggle("glance", true);
             glanceRef.current?.classList.toggle("lyrics", false);
             glanceRef.current?.classList.toggle("lyrics-bg", true);
@@ -97,7 +97,14 @@ const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
 
 const getIsShuffled = () => parseInt(getSetting("isShuffled") || "0") === 1;
 const PlaylistProvider = React.memo(
-    ({ children, resetState }: PlaylistProviderProps & { resetState: () => void }) => {
+    ({
+        children,
+        resetState,
+        handlePlay,
+    }: PlaylistProviderProps & {
+        resetState: () => void;
+        handlePlay: (newIndex: number) => Promise<void>;
+    }) => {
         const [playlist, setPlaylist] = useState<Track[]>([]);
         const [shuffle, setShuffle] = useState<boolean>(getIsShuffled);
         const shuffleSignatureRef = useRef<string>("");
@@ -132,6 +139,12 @@ const PlaylistProvider = React.memo(
                 }
             } else {
                 if (!Object.is(playlist, queue)) {
+                    if (playlist.length === 0) {
+                        setQueue(playlist);
+                        resetState();
+                        return;
+                    }
+                    
                     const newIndex = binarySearch(playlist, queue[currentTrackIndex]?.id ?? -1);
 
                     setQueue(playlist);
@@ -147,7 +160,7 @@ const PlaylistProvider = React.memo(
                 <ShuffleDispatcherContext.Provider value={setShuffle}>
                     <PlaylistContext.Provider value={playlist}>
                         <ShuffleContext.Provider value={shuffle}>
-                            {children}
+                            <HandlePlayContext value={handlePlay}>{children}</HandlePlayContext>
                         </ShuffleContext.Provider>
                     </PlaylistContext.Provider>
                 </ShuffleDispatcherContext.Provider>
@@ -288,12 +301,21 @@ const useShuffleDispatcher = () => {
 
     return value;
 };
+const useHandlePlay = () => {
+    const value = useContext(HandlePlayContext);
+
+    if (value == null) {
+        throw new Error("handle play hook must be used within a PlaylistProvider");
+    }
+
+    return value;
+};
 
 const useSelectedTrack = () => {
     const value = useContext(SelectedTrackContext);
 
     return value;
-}
+};
 
 export {
     ServiceProvider,
@@ -311,5 +333,6 @@ export {
     usePlaylistDispatcher,
     useShuffle,
     useShuffleDispatcher,
-    useSelectedTrack
+    useHandlePlay,
+    useSelectedTrack,
 };

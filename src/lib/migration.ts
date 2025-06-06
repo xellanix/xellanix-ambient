@@ -6,7 +6,7 @@ function setStorage(key: string, value: string): void {
 	localStorage.setItem(key, value);
 }
 
-const APP_VERSION = "1.1.1";
+const APP_VERSION = "1.2.0";
 const MIGRATION_VERSION = "1.1.1";
 
 function getValueByPath<T>(obj: any, keys: (string | number)[]): T | undefined {

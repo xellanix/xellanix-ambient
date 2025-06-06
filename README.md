@@ -12,15 +12,17 @@ An simple music player with focus on lyrics display.
 - [x] (04/26/2025 - v0.2.0) Animate lyrics scroll
 - [x] (04/26/2025 - v0.4.0) Add shuffle and loop control
 - [x] (04/26/2025 - v0.4.0) Add volume control
-- [-] (06/01/2025 - v1.1.1) Add PWA or native app support
+- [x] (06/03/2025 - v1.2.0) Add PWA or native app support
 - [x] (05/31/2025 - v1.0.0) Improve other UI/UX*
 - [x] (05/11/2025 - v0.6.3) Save volume level, shuffle, loop, dark mode
 - [x] (05/25/2025 - v0.7.5) Keyboard shortcuts*
 - [x] (05/25/2025 - v0.8.0) Improve file adding performance
+- [x] (06/03/2025 - v1.2.0) Several bugs fixed
 
 ## Notes for Add PWA or native app support:
-- [x] Add PWA support
-- [ ] Add native app support
+- [x] Add PWA support ([xellanix-ambient](https://github.com/xellanix/xellanix-ambient))
+- [x] Add native app support:
+  - [x] Windows ([xellanix-ambient-windows](https://github.com/xellanix/xellanix-ambient-windows))
 
 ## Notes for Improve other UI/UX:
 - [x] Tooltips
@@ -38,10 +40,10 @@ An simple music player with focus on lyrics display.
 - [x] Switch to queue view: Shift + Q
 
 ## Future Ideas:
-- [ ] Add more codecs support:
-  - [ ] ALAC
-  - [ ] EAC3
-  - [ ] EAC3 JOC
+- [x] Add more codecs support: (ONLY IN WINDOWS VERSION)
+  - [x] ALAC
+  - [x] EAC3
+  - [x] EAC3 JOC
   - etc...
 - [x] (05/31/2025 - v1.0.0) Add animated background
 - [ ] Add lyrics matching by voice recognition

@@ -68,7 +68,7 @@ const MaximizeLyricsButton = React.memo(
     )
 );
 
-const AppContent = React.memo(({ playTrack }: { playTrack: any }) => {
+const AppContent = React.memo(() => {
     const [maximizeLyrics, setMaximizeLyrics] = useState<boolean>(false);
 
     const toggleMaximizeLyrics = useCallback(() => setMaximizeLyrics((prev) => !prev), []);
@@ -121,7 +121,7 @@ const AppContent = React.memo(({ playTrack }: { playTrack: any }) => {
                 <LyricsDisplay />
             </div>
 
-            {!maximizeLyrics && <SidebarMemo playTrack={playTrack} />}
+            {!maximizeLyrics && <SidebarMemo />}
         </div>
     );
 });
@@ -322,11 +322,11 @@ const AppService: React.FC = () => {
     }, []);
 
     return (
-        <PlaylistProvider resetState={resetState}>
+        <PlaylistProvider resetState={resetState} handlePlay={handlePlay}>
             <div
                 ref={rootRef}
                 className="mx-auto p-2 sm:p-4 from-white to-gray-300 dark:from-gray-600 dark:to-gray-900 min-h-screen h-screen max-h-screen flex flex-col gap-2 sm:gap-4 overflow-auto">
-                <AppContent playTrack={playTrack} />
+                <AppContent />
 
                 {/* Audio Player */}
                 <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 sm:w-40 max-w-[90%] sm:max-w-[400px]">

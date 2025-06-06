@@ -199,7 +199,7 @@ const HeaderMemo = React.memo(() => {
     );
 });
 
-const SidebarMemo = React.memo(({ playTrack }: { playTrack: any }) => {
+const SidebarMemo = React.memo(() => {
     const [viewMode, setViewMode] = useState<"playlist" | "queue">("playlist");
 
     const changeSidebarView = useCallback((selectedIndex: number) => {
@@ -220,15 +220,9 @@ const SidebarMemo = React.memo(({ playTrack }: { playTrack: any }) => {
                 {/* Content Area */}
                 <div className="flex flex-col flex-1 h-full max-h-full overflow-hidden">
                     {viewMode === "playlist" ? (
-                        <Playlist
-                            playTrack={playTrack}
-                            className="!p-0 flex flex-col flex-1 overflow-hidden"
-                        />
+                        <Playlist className="!p-0 flex flex-col flex-1 overflow-hidden" />
                     ) : (
-                        <Queue
-                            playTrack={playTrack}
-                            className="!p-0 flex flex-col flex-1 overflow-hidden"
-                        />
+                        <Queue className="!p-0 flex flex-col flex-1 overflow-hidden" />
                     )}
                 </div>
                 {/* Divider */}
